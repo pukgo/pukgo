@@ -77,7 +77,7 @@
   .btn-solid:hover:not(:disabled) { background: var(--ink-hover); border-color: var(--ink-hover); }
   .btn-ghost { border-color: var(--line); }
   .btn-ghost:hover:not(:disabled) { background: var(--bg); color: var(--ink); border-color: var(--ink); }
-  .btn-ghost.active { background: var(--ink); border-color: var(--ink); color: var(--on-ink); }
+  .btn-ghost.active, .btn-ghost.active:hover:not(:disabled) { background: var(--ink); border-color: var(--ink); color: var(--on-ink); }
   .btn-small { padding: 6px 10px; font-size: 12.5px; }
   .btn-block { width: 100%; }
 
@@ -164,17 +164,24 @@
   .my-room-code { font-family: var(--mono); font-size: 11.5px; color: var(--ink-3); margin-left: auto; }
 
   .char-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(230px, 1fr)); border-top: 1px solid var(--line); border-left: 1px solid var(--line); }
-  .char-card { border-right: 1px solid var(--line); border-bottom: 1px solid var(--line); padding: 22px; display: flex; flex-direction: column; transition: background .15s; }
+  .char-card { border: none; border-right: 1px solid var(--line); border-bottom: 1px solid var(--line); background: var(--bg); padding: 22px; display: flex; flex-direction: column; text-align: left; transition: background .15s; }
   .char-card:hover { background: var(--bg-sub); }
+  .char-card.is-hidden .card-name, .char-card.is-hidden .card-tags, .char-card.is-hidden .card-desc, .char-card.is-hidden .avatar { opacity: .45; }
   .card-top { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 18px; }
-  .card-top-right { display: flex; align-items: center; gap: 8px; }
+  .card-top-right { display: flex; align-items: center; gap: 6px; flex-wrap: wrap; justify-content: flex-end; }
   .card-code { font-family: var(--mono); font-size: 12px; color: var(--ink-3); }
   .card-status { border: 1px solid var(--ink); padding: 2px 8px; font-size: 11.5px; }
   .card-status.muted { border-color: var(--line); color: var(--ink-3); }
+  .card-badge { border: 1px dashed var(--ink-3); color: var(--ink-3); padding: 2px 8px; font-size: 11.5px; }
   .card-name { font-size: 19px; font-weight: 600; letter-spacing: -0.02em; }
   .card-sub { font-size: 13px; font-weight: 400; color: var(--ink-3); margin-left: 6px; }
   .card-tags { display: flex; flex-wrap: wrap; gap: 4px 10px; margin: 10px 0 14px; font-size: 12px; color: var(--ink-2); }
-  .card-desc { font-size: 13px; color: var(--ink-2); line-height: 1.65; flex: 1; margin-bottom: 22px; }
+  .card-desc { font-size: 13px; color: var(--ink-2); line-height: 1.65; flex: 1; margin-bottom: 22px; white-space: pre-line; }
+  .card-actions { display: flex; gap: 6px; }
+  .card-actions .btn { flex: 1; }
+  .add-card { align-items: center; justify-content: center; min-height: 240px; color: var(--ink-3); font-size: 14px; cursor: pointer; }
+  .add-card:hover { color: var(--ink); }
+  .add-card-plus { font-size: 28px; font-weight: 300; line-height: 1; margin-bottom: 8px; }
 
   .room-head { display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 12px; padding: 14px 24px; border-bottom: 1px solid var(--line); flex-shrink: 0; }
   .room-title { font-size: 16px; font-weight: 600; letter-spacing: -0.02em; }
@@ -276,6 +283,8 @@
   .form-group .field { width: 100%; }
   .form-hint { font-size: 11.5px; color: var(--ink-4); margin-top: 6px; }
   .form-error { font-size: 12.5px; color: var(--ink); margin-top: 14px; min-height: 1em; }
+  .check-row { display: flex; align-items: center; gap: 8px; font-size: 13px; margin-bottom: 14px; cursor: pointer; }
+  .check-row input { accent-color: var(--ink); width: 16px; height: 16px; }
   .link-row { display: flex; gap: 6px; margin-bottom: 6px; }
   .link-row .field { flex: 1; font-family: var(--mono); font-size: 12.5px; }
   .copy-row { display: flex; gap: 6px; }
@@ -334,19 +343,19 @@
     <div class="sidebar-head">
       <div class="eyebrow"><span>Pair Rooms</span><span id="sidebarRoomCount">0</span></div>
       <p class="sidebar-note">방을 선택하면 입력 페르소나가 해당 캐릭터로 전환됩니다.</p>
-      <button type="button" class="btn btn-ghost btn-small btn-block" id="btnHostShowcase">쇼케이스 미리보기</button>
+      <button type="button" class="btn btn-ghost btn-small btn-block" id="btnManageChars">캐릭터 관리</button>
     </div>
     <div class="room-list" id="roomListContainer"></div>
   </aside>
 
   <main class="main-stage">
 
-    <!-- 쇼케이스 / 로비 -->
+    <!-- 쇼케이스 / 로비 / 캐릭터 관리 -->
     <section class="view-section active" id="viewShowcase">
       <div class="lobby">
         <div class="lobby-head">
-          <h1>누구와 이야기를 나누시겠습니까?</h1>
-          <p>캐릭터를 선택해 1:1 교류방을 만들거나, 발급받은 입장 코드로 이어서 들어갈 수 있습니다.</p>
+          <h1 id="lobbyTitle">누구와 이야기를 나누시겠습니까?</h1>
+          <p id="lobbyDesc">캐릭터를 선택해 1:1 교류방을 만들거나, 발급받은 입장 코드로 이어서 들어갈 수 있습니다.</p>
           <div class="token-bar" id="tokenBar">
             <input type="text" class="field" id="tokenInput" placeholder="입장 코드" autocomplete="off" />
             <input type="password" class="field" id="tokenPassInput" placeholder="비밀번호" autocomplete="current-password" />
@@ -508,7 +517,7 @@
 <div class="modal-backdrop" id="modalLogin">
   <div class="modal-box">
     <div class="modal-title">호스트 로그인</div>
-    <p class="modal-desc">호스트 계정으로 로그인하면 모든 교류방을 관리할 수 있습니다.</p>
+    <p class="modal-desc">호스트 계정으로 로그인하면 모든 교류방과 캐릭터를 관리할 수 있습니다.</p>
     <div class="form-group" style="margin-top:16px;">
       <label for="loginEmail">이메일</label>
       <input type="email" class="field" id="loginEmail" autocomplete="username" />
@@ -521,6 +530,51 @@
     <div class="modal-foot">
       <button type="button" class="btn btn-ghost btn-close-modal">취소</button>
       <button type="button" class="btn btn-solid" id="btnLogin">로그인</button>
+    </div>
+  </div>
+</div>
+
+<!-- 호스트 캐릭터 추가 / 수정 -->
+<div class="modal-backdrop" id="modalCharForm">
+  <div class="modal-box form">
+    <div class="modal-title" id="cfTitle">새 캐릭터</div>
+    <p class="modal-desc">이름만 필수입니다. 저장하면 쇼케이스에 바로 반영됩니다.</p>
+
+    <div class="form-section-title">인장</div>
+    <div class="avatar-field">
+      <span id="cfAvatarPreview"></span>
+      <div class="avatar-actions">
+        <div class="btn-row">
+          <button type="button" class="btn btn-ghost btn-small" id="btnCfPickAvatar">이미지 선택</button>
+          <button type="button" class="btn btn-ghost btn-small" id="btnCfRemoveAvatar" hidden>삭제</button>
+        </div>
+        <p class="form-hint">정사각형으로 잘려 저장됩니다.</p>
+      </div>
+      <input type="file" id="cfAvatarFile" accept="image/*" hidden />
+    </div>
+
+    <div class="form-section-title">기본 정보</div>
+    <div class="form-grid">
+      <div class="form-group"><label for="cfName">이름 *</label><input type="text" class="field" id="cfName" maxlength="30" /></div>
+      <div class="form-group"><label for="cfSub">다른 표기</label><input type="text" class="field" id="cfSub" maxlength="40" /></div>
+      <div class="form-group"><label for="cfCode">카드 코드</label><input type="text" class="field" id="cfCode" maxlength="4" placeholder="선택" /></div>
+      <div class="form-group"><label for="cfSort">표시 순서</label><input type="number" class="field" id="cfSort" min="0" max="999" /></div>
+    </div>
+
+    <div class="form-section-title">쇼케이스</div>
+    <div class="form-group"><label for="cfStatus">상태 문구</label><input type="text" class="field" id="cfStatus" maxlength="20" /></div>
+    <label class="check-row"><input type="checkbox" id="cfOpen" /> 상태 문구를 강조 표시</label>
+    <div class="form-group">
+      <label for="cfTags">태그</label>
+      <input type="text" class="field" id="cfTags" maxlength="250" />
+      <p class="form-hint">띄어쓰기나 쉼표로 구분합니다. 최대 10개, #은 자동으로 붙습니다.</p>
+    </div>
+    <div class="form-group"><label for="cfDesc">소개</label><textarea class="field" id="cfDesc" rows="3" maxlength="500"></textarea></div>
+
+    <div class="form-error" id="cfError"></div>
+    <div class="modal-foot">
+      <button type="button" class="btn btn-ghost btn-close-modal">취소</button>
+      <button type="button" class="btn btn-solid" id="btnSubmitChar">저장</button>
     </div>
   </div>
 </div>
@@ -708,6 +762,15 @@ function parseDiceExpr(expr) {
   return { n, sides, mod };
 }
 
+function parseTags(value) {
+  return String(value || '')
+    .split(/[,\s]+/)
+    .map(t => t.trim())
+    .filter(Boolean)
+    .map(t => t.startsWith('#') ? t : '#' + t)
+    .slice(0, 10);
+}
+
 function resizeImage(file, size = AVATAR_SIZE) {
   return new Promise((resolve, reject) => {
     if (!file || !/^image\//.test(file.type)) return reject(new Error('이미지 파일만 올릴 수 있습니다.'));
@@ -754,7 +817,7 @@ async function fetchAll(makeQuery) {
 
 const mapChar = c => ({
   id: c.id, code: c.code, name: c.name, sub: c.sub, status: c.status, open: c.open,
-  tags: c.tags || [], desc: c.descr, avatar: c.avatar
+  tags: c.tags || [], desc: c.descr, avatar: c.avatar, sort: c.sort, hidden: !!c.hidden
 });
 
 const api = {
@@ -782,6 +845,11 @@ const api = {
     const rows = await q(sb.from('characters').select('*').order('sort').order('id'));
     return rows.map(mapChar);
   },
+
+  upsertCharacter(id, data) { return q(sb.rpc('upsert_character', { p_id: id || null, p_data: data })); },
+  deleteCharacter(id) { return q(sb.rpc('delete_character', { p_id: id })); },
+  setCharacterHidden(id, hidden) { return q(sb.rpc('set_character_hidden', { p_id: id, p_hidden: hidden })); },
+  updateCharacterAvatar(charId, avatar) { return q(sb.rpc('update_character_avatar', { p_char: charId, p_avatar: avatar })); },
 
   async listRooms() {
     const rows = await q(sb.from('rooms')
@@ -848,7 +916,6 @@ const api = {
   rollDice(roomId, { label, expr, special }) {
     return q(sb.rpc('roll_dice', { p_room: roomId, p_label: label || '', p_expr: expr || null, p_special: special || null }));
   },
-  updateCharacterAvatar(charId, avatar) { return q(sb.rpc('update_character_avatar', { p_char: charId, p_avatar: avatar })); },
 
   async uploadImage(blob) {
     if (!state.userId) throw new Error('접속 정보를 확인할 수 없습니다. 새로고침해 주세요.');
@@ -896,6 +963,8 @@ const state = {
   profileMode: 'create',
   pendingCharId: null,
   pfAvatar: '',
+  charFormId: null,
+  cfAvatar: '',
   unsubscribeRoom: null,
   unsubscribeAll: null,
   busy: false,
@@ -903,7 +972,7 @@ const state = {
 };
 
 const charById = id => state.characters.find(c => c.id === id);
-const hostChar = () => charById(state.room.hostCharId) || { name: '', sub: '', tags: [], avatar: '' };
+const hostChar = () => charById(state.room.hostCharId) || { name: '', sub: '', tags: [], avatar: '', status: '', desc: '' };
 const roleName = role => role === 'host' ? hostChar().name : state.room.guest.name;
 const allAus = () => [...DEFAULT_AUS, ...(state.room?.customAus || [])];
 
@@ -930,6 +999,12 @@ const run = fn => async (...args) => {
 /* ---------- 데이터 불러오기 ---------- */
 async function loadCharacters() {
   state.characters = await api.listCharacters();
+}
+async function reloadCharacters() {
+  await loadCharacters();
+  if ($('viewShowcase').classList.contains('active')) renderShowcase();
+  renderSidebar();
+  if (state.room) renderRoom();
 }
 async function loadRooms() {
   state.rooms = await api.listRooms();
@@ -980,6 +1055,10 @@ function applyRoleUI() {
   $('btnAuth').textContent = state.isHost ? '로그아웃' : '호스트 로그인';
   $('btnBackLobby').hidden = state.isHost;
   $('tokenBar').hidden = state.isHost;
+  $('lobbyTitle').textContent = state.isHost ? '캐릭터 관리' : '누구와 이야기를 나누시겠습니까?';
+  $('lobbyDesc').textContent = state.isHost
+    ? '방문자에게 보이는 쇼케이스입니다. 숨긴 캐릭터는 방문자에게 보이지 않고 새 교류방도 만들 수 없습니다.'
+    : '캐릭터를 선택해 1:1 교류방을 만들거나, 발급받은 입장 코드로 이어서 들어갈 수 있습니다.';
 }
 
 function showView(id) {
@@ -1019,14 +1098,16 @@ async function goLobby() {
   state.activeRoomId = null;
   state.room = null;
   history.replaceState(null, '', location.pathname);
-  await loadRooms();
+  await Promise.all([loadRooms(), loadCharacters()]);
   renderShowcase();
+  renderSidebar();
   showView('viewShowcase');
 }
 
 /* ---------- 사이드바 (호스트) ---------- */
 function renderSidebar() {
   if (!state.isHost) return;
+  $('btnManageChars').classList.toggle('active', !state.activeRoomId);
   const box = $('roomListContainer');
   $('sidebarRoomCount').textContent = state.rooms.length;
   box.innerHTML = '';
@@ -1048,7 +1129,7 @@ function renderSidebar() {
   });
 }
 
-/* ---------- 쇼케이스 / 로비 ---------- */
+/* ---------- 쇼케이스 / 로비 / 캐릭터 관리 ---------- */
 function renderShowcase() {
   const mySec = $('myRoomsSection');
   const myList = $('myRoomsList');
@@ -1073,27 +1154,107 @@ function renderShowcase() {
 
   const grid = $('showcaseGrid');
   grid.innerHTML = '';
-  state.characters.forEach(c => {
+  const list = state.isHost ? state.characters : state.characters.filter(c => !c.hidden);
+
+  list.forEach(c => {
     const card = document.createElement('div');
-    card.className = 'char-card';
+    card.className = 'char-card' + (c.hidden ? ' is-hidden' : '');
     card.innerHTML = `
       <div class="card-top">
         ${avatar(c.avatar, c.name, 'lg')}
         <div class="card-top-right">
-          <span class="card-code">${esc(c.code)}</span>
+          ${c.code ? `<span class="card-code">${esc(c.code)}</span>` : ''}
+          ${c.hidden ? '<span class="card-badge">숨김</span>' : ''}
           <span class="card-status ${c.open ? '' : 'muted'}">${esc(c.status)}</span>
         </div>
       </div>
-      <div class="card-name">${esc(c.name)}<span class="card-sub">${esc(c.sub)}</span></div>
+      <div class="card-name">${esc(c.name)}${c.sub ? `<span class="card-sub">${esc(c.sub)}</span>` : ''}</div>
       <div class="card-tags">${c.tags.map(t => `<span>${esc(t)}</span>`).join('')}</div>
       <p class="card-desc">${esc(c.desc)}</p>
       ${state.isHost
-        ? '<button type="button" class="btn btn-block" disabled>방문자 전용 버튼</button>'
-        : '<button type="button" class="btn btn-block">교류방 만들기</button>'}
+        ? `<div class="card-actions">
+             <button type="button" class="btn btn-ghost btn-small" data-act="edit">수정</button>
+             <button type="button" class="btn btn-ghost btn-small" data-act="hide">${c.hidden ? '보이기' : '숨기기'}</button>
+             <button type="button" class="btn btn-ghost btn-small" data-act="delete">삭제</button>
+           </div>`
+        : '<button type="button" class="btn btn-block" data-act="create">교류방 만들기</button>'}
     `;
-    if (!state.isHost) card.querySelector('button').addEventListener('click', () => openProfileForm('create', c.id));
+    card.querySelectorAll('[data-act]').forEach(btn => {
+      const act = btn.dataset.act;
+      if (act === 'create') btn.addEventListener('click', () => openProfileForm('create', c.id));
+      if (act === 'edit') btn.addEventListener('click', () => openCharForm(c));
+      if (act === 'hide') btn.addEventListener('click', run(() => toggleCharHidden(c)));
+      if (act === 'delete') btn.addEventListener('click', run(() => deleteChar(c)));
+    });
     grid.appendChild(card);
   });
+
+  if (state.isHost) {
+    const add = document.createElement('button');
+    add.type = 'button';
+    add.className = 'char-card add-card';
+    add.innerHTML = '<span class="add-card-plus">+</span>새 캐릭터 추가';
+    add.addEventListener('click', () => openCharForm(null));
+    grid.appendChild(add);
+  }
+}
+
+/* ---------- 호스트 캐릭터 관리 ---------- */
+async function toggleCharHidden(c) {
+  await api.setCharacterHidden(c.id, !c.hidden);
+  await reloadCharacters();
+}
+
+async function deleteChar(c) {
+  if (!confirm(`'${c.name}' 캐릭터를 삭제할까요?\n삭제하면 되돌릴 수 없습니다.`)) return;
+  await api.deleteCharacter(c.id);
+  await reloadCharacters();
+}
+
+function renderCfAvatar() {
+  $('cfAvatarPreview').innerHTML = avatar(state.cfAvatar, $('cfName').value || '?', 'xl');
+  $('btnCfRemoveAvatar').hidden = !state.cfAvatar;
+}
+
+function openCharForm(c) {
+  state.charFormId = c ? c.id : null;
+  state.cfAvatar = c?.avatar || '';
+  $('cfTitle').textContent = c ? `${c.name} 수정` : '새 캐릭터';
+  $('cfName').value = c?.name || '';
+  $('cfSub').value = c?.sub || '';
+  $('cfCode').value = c?.code || '';
+  $('cfSort').value = c ? c.sort : '';
+  $('cfStatus').value = c ? c.status : '교류 가능';
+  $('cfOpen').checked = c ? c.open : true;
+  $('cfTags').value = (c?.tags || []).join(' ');
+  $('cfDesc').value = c?.desc || '';
+  $('cfError').textContent = '';
+  renderCfAvatar();
+  closeModals();
+  $('modalCharForm').classList.add('open');
+  $('cfName').focus();
+}
+
+async function submitChar() {
+  $('cfError').textContent = '';
+  const name = $('cfName').value.trim();
+  const sortRaw = $('cfSort').value.trim();
+  if (!name) { $('cfError').textContent = '이름을 입력해 주세요.'; return; }
+  if (sortRaw && !/^\d{1,3}$/.test(sortRaw)) { $('cfError').textContent = '표시 순서는 0~999 사이 숫자로 입력해 주세요.'; return; }
+
+  await api.upsertCharacter(state.charFormId, {
+    name,
+    sub: $('cfSub').value.trim(),
+    code: $('cfCode').value.trim(),
+    status: $('cfStatus').value.trim(),
+    open: $('cfOpen').checked,
+    tags: parseTags($('cfTags').value),
+    descr: $('cfDesc').value.trim(),
+    avatar: state.cfAvatar,
+    sort: sortRaw
+  });
+  closeModals();
+  await reloadCharacters();
 }
 
 /* ---------- 페어 룸 ---------- */
@@ -1169,7 +1330,6 @@ function renderSseols() {
 
   $('filterCount').textContent = `${list.length} / ${threads.length}`;
 
-  // 실시간 갱신 시 작성 중인 답글 보존
   const box = $('sseolThreadList');
   const drafts = {};
   let focusedId = null;
@@ -1344,7 +1504,7 @@ function openNovelModal() {
   $('modalNovelView').classList.add('open');
 }
 
-/* ---------- 프로필 작성 / 수정 ---------- */
+/* ---------- 방문자 프로필 작성 / 수정 ---------- */
 const PF_INPUTS = {
   name: 'pfName', nameAlt: 'pfNameAlt', age: 'pfAge', gender: 'pfGender', affiliation: 'pfAffiliation',
   world: 'pfWorld', personality: 'pfPersonality', intro: 'pfIntro', appearance: 'pfAppearance',
@@ -1447,7 +1607,7 @@ function renderProfileView() {
       ${avatar(c.avatar, c.name, 'lg')}
       <div>
         <div class="pv-role">호스트 캐릭터${state.isHost ? ' · 나' : ''}</div>
-        <div class="pv-name">${esc(c.name)}<span class="card-sub">${esc(c.sub)}</span></div>
+        <div class="pv-name">${esc(c.name)}${c.sub ? `<span class="card-sub">${esc(c.sub)}</span>` : ''}</div>
       </div>
     </div>
     <dl class="profile-dl">${hostRows.join('')}</dl>
@@ -1482,9 +1642,7 @@ function renderProfileView() {
     const rm = $('btnHostAvatarRemove');
     if (rm) rm.addEventListener('click', run(async () => {
       await api.updateCharacterAvatar(state.room.hostCharId, '');
-      await loadCharacters();
-      renderRoom();
-      renderSidebar();
+      await reloadCharacters();
     }));
   } else {
     $('btnEditProfile').addEventListener('click', () => openProfileForm('edit'));
@@ -1557,7 +1715,7 @@ $('btnAuth').addEventListener('click', () => {
 $('btnLogin').addEventListener('click', run(hostLogin));
 onEnter($('loginPassword'), run(hostLogin));
 
-$('btnHostShowcase').addEventListener('click', run(goLobby));
+$('btnManageChars').addEventListener('click', run(goLobby));
 $('btnBackLobby').addEventListener('click', run(goLobby));
 $('tabBtnSseol').addEventListener('click', () => switchTab('sseol'));
 $('tabBtnRp').addEventListener('click', () => switchTab('rp'));
@@ -1599,6 +1757,7 @@ onEnter($('rpInputText'), send);
 $('btnOpenNovel').addEventListener('click', openNovelModal);
 $('btnCopyNovel').addEventListener('click', e => copyText($('novelTextOutput').textContent, e.currentTarget));
 
+// 방문자 프로필 인장
 $('btnPickAvatar').addEventListener('click', () => $('pfAvatarFile').click());
 $('btnRemoveAvatar').addEventListener('click', () => { state.pfAvatar = ''; renderPfAvatar(); });
 $('pfAvatarFile').addEventListener('change', run(async e => {
@@ -1610,15 +1769,27 @@ $('pfAvatarFile').addEventListener('change', run(async e => {
 }));
 $('pfName').addEventListener('input', () => { if (!state.pfAvatar) renderPfAvatar(); });
 
+// 호스트 캐릭터 폼 인장
+$('btnCfPickAvatar').addEventListener('click', () => $('cfAvatarFile').click());
+$('btnCfRemoveAvatar').addEventListener('click', () => { state.cfAvatar = ''; renderCfAvatar(); });
+$('cfAvatarFile').addEventListener('change', run(async e => {
+  const file = e.target.files[0];
+  e.target.value = '';
+  if (!file) return;
+  state.cfAvatar = await uploadAvatarFile(file);
+  renderCfAvatar();
+}));
+$('cfName').addEventListener('input', () => { if (!state.cfAvatar) renderCfAvatar(); });
+$('btnSubmitChar').addEventListener('click', run(submitChar));
+
+// 방 안 프로필에서 호스트 인장 변경
 $('hostAvatarFile').addEventListener('change', run(async e => {
   const file = e.target.files[0];
   e.target.value = '';
   if (!file) return;
   const url = await uploadAvatarFile(file);
   await api.updateCharacterAvatar(state.room.hostCharId, url);
-  await loadCharacters();
-  renderRoom();
-  renderSidebar();
+  await reloadCharacters();
 }));
 
 $('btnAddLink').addEventListener('click', () => addLinkRow());
@@ -1669,6 +1840,7 @@ async function init() {
       await enterRoom(state.rooms[0].roomId);
     } else {
       renderShowcase();
+      renderSidebar();
       showView('viewShowcase');
       if (code && !state.isHost) {
         $('tokenInput').value = code.toUpperCase();
