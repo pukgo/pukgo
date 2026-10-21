@@ -1733,3 +1733,1059 @@ function toolsHtml(key, editable = true) {
 function editorHtml({ enterSaves = false, rows = 3 } = {}) {
   return `
     <div class="edit-box">
+      <textarea class="field edit-input" rows="${rows}"${enterSaves ? ' data-enter="save"' : ''}>${esc(state.editing?.draft || '')}</textarea>
+      <div class="edit-actions">
+        <button type="button" class="btn btn-ghost btn-small" data-edit="cancel">취소</button>
+        <button type="button" class="btn btn-solid btn-small" data-edit="save">저장</button>
+      </div>
+    </div>`;
+}
+
+function captureEditor(container) {
+  const el = document.activeElement;
+  if (el && el.classList.contains('edit-input') && container.contains(el)) {
+    return { start: el.selectionStart, end: el.selectionEnd };
+  }
+  return null;
+}
+function restoreEditor(container, sel) {
+  if (!sel) return;
+  const el = container.querySelector('.edit-input');
+  if (!el) return;
+  el.focus({ preventScroll: true });
+  try { el.setSelectionRange(sel.start, sel.end); } catch {}
+}
+
+function findItem(type, id) {
+  const r = state.room;
+  if (!r) return null;
+  if (type === 'log') {
+    const l = r.logs.find(x => x.id === id);
+    return l ? { text: (l.kind === 'narration' ? l.text : l.raw) || '' } : null;
+  }
+  if (type === 'thread') {
+    const t = r.threads.find(x => x.id === id);
+    return t ? { text: t.text } : null;
+  }
+  for (const t of r.threads) {
+    const x = t.replies.find(y => y.id === id);
+    if (x) return { text: x.text };
+  }
+  return null;
+}
+
+function rerenderAll() {
+  if (!state.room) return;
+  renderSseols();
+  renderRp();
+}
+
+function startEdit(type, id) {
+  const item = findItem(type, id);
+  if (!item) return;
+  state.editing = { key: `${type}:${id}`, draft: item.text };
+  state.toolsOpen = null;
+  rerenderAll();
+  const el = document.querySelector('.edit-input');
+  if (el) {
+    el.focus();
+    const n = el.value.length;
+    try { el.setSelectionRange(n, n); } catch {}
+  }
+}
+
+function cancelEdit() {
+  if (!state.editing) return;
+  state.editing = null;
+  rerenderAll();
+}
+
+const saveEdit = run(async () => {
+  if (!state.editing) return;
+  const [type, id] = state.editing.key.split(':');
+  const item = findItem(type, id);
+  if (!item) {
+    state.editing = null;
+    rerenderAll();
+    throw new Error('글을 찾을 수 없습니다.');
+  }
+  const text = state.editing.draft.trim();
+  if (!text) throw new Error('내용을 입력해 주세요.');
+  if (text !== item.text) {
+    if (type === 'log') await api.updateLog(id, text);
+    else if (type === 'thread') await api.updateThread(id, text);
+    else await api.updateReply(id, text);
+  }
+  state.editing = null;
+  await refresh();
+});
+
+async function deleteItem(type, id) {
+  const msg = type === 'thread'
+    ? '이 썰을 삭제할까요?\n달린 답글도 함께 삭제되며 되돌릴 수 없습니다.'
+    : '이 글을 삭제할까요?\n삭제하면 되돌릴 수 없습니다.';
+  if (!confirm(msg)) return;
+  if (type === 'log') await api.deleteLog(id);
+  else if (type === 'thread') await api.deleteThread(id);
+  else await api.deleteReply(id);
+  if (state.editing?.key === `${type}:${id}`) state.editing = null;
+  await refresh();
+}
+
+function onTool(action, key) {
+  const [type, id] = key.split(':');
+  if (action === 'edit') startEdit(type, id);
+  else run(() => deleteItem(type, id))();
+}
+
+function toggleToolsOpen(el) {
+  const key = el.dataset.key;
+  const open = state.toolsOpen !== key;
+  state.toolsOpen = open ? key : null;
+  document.querySelectorAll('.tools-open').forEach(x => x.classList.remove('tools-open'));
+  if (open) el.classList.add('tools-open');
+}
+
+function bindItemEvents(container) {
+  container.addEventListener('click', e => {
+    const tool = e.target.closest('[data-tool]');
+    if (tool) { onTool(tool.dataset.tool, tool.dataset.key); return; }
+    const ed = e.target.closest('[data-edit]');
+    if (ed) { if (ed.dataset.edit === 'save') saveEdit(); else cancelEdit(); return; }
+    if (e.target.closest('button, input, textarea, select, a')) return;
+    const owned = e.target.closest('.owned');
+    if (owned && container.contains(owned)) toggleToolsOpen(owned);
+  });
+  container.addEventListener('input', e => {
+    if (e.target.classList.contains('edit-input') && state.editing) state.editing.draft = e.target.value;
+  });
+  container.addEventListener('keydown', e => {
+    if (!e.target.classList.contains('edit-input')) return;
+    if (e.key === 'Escape') { e.stopPropagation(); cancelEdit(); return; }
+    if (e.key !== 'Enter' || e.isComposing) return;
+    if ((e.metaKey || e.ctrlKey) || (e.target.dataset.enter === 'save' && !e.shiftKey)) {
+      e.preventDefault();
+      saveEdit();
+    }
+  });
+}
+
+/* ---------- 썰풀이 ---------- */
+function sseolList() {
+  const f = state.filter;
+  const q = f.q.trim().toLowerCase();
+  const list = state.room.threads.filter(t => {
+    if (f.au !== 'all' && t.au !== f.au) return false;
+    if (f.author !== 'all' && t.authorRole !== f.author) return false;
+    if (q && ![t.text, ...t.replies.map(r => r.text)].join(' ').toLowerCase().includes(q)) return false;
+    return true;
+  });
+  if (f.sort === 'new') list.sort((a, b) => time(b.createdAt) - time(a.createdAt));
+  else if (f.sort === 'old') list.sort((a, b) => time(a.createdAt) - time(b.createdAt));
+  else list.sort((a, b) => b.replies.length - a.replies.length || time(b.createdAt) - time(a.createdAt));
+  return list;
+}
+
+function replyHtml(r) {
+  const key = `reply:${r.id}`;
+  const mine = r.authorRole === state.role;
+  const editing = state.editing?.key === key;
+  const cls = 'reply' + (mine ? ' owned' : '') + (state.toolsOpen === key ? ' tools-open' : '');
+  return `
+    <div class="${cls}" data-key="${esc(key)}">
+      ${avatarOf(r.authorRole, 'xs')}
+      <div class="reply-main">${editing
+        ? editorHtml({ enterSaves: true, rows: 2 })
+        : `<strong>${esc(r.authorName)}</strong>${esc(r.text)}${r.editedAt ? '<span class="edited">수정됨</span>' : ''}${mine ? toolsHtml(key) : ''}`}</div>
+    </div>`;
+}
+
+/* 긴 본문은 8줄까지만 보이고, 넘칠 때만 '본문 펼치기' 버튼을 보여준다 */
+function updateClamps() {
+  document.querySelectorAll('#sseolThreadList .thread-body.clamped').forEach(body => {
+    const btn = body.nextElementSibling;
+    if (btn && btn.classList.contains('body-toggle')) btn.hidden = body.scrollHeight <= body.clientHeight + 1;
+  });
+}
+
+function threadEl(id) {
+  return document.querySelector(`#sseolThreadList .thread[data-thread="${id}"]`);
+}
+function scrollThreadIntoView(id) {
+  threadEl(id)?.scrollIntoView({ block: 'nearest' });
+}
+function focusReplyRow(id) {
+  const input = threadEl(id)?.querySelector('.reply-row input');
+  if (!input) return;
+  input.closest('.reply-row').scrollIntoView({ block: 'nearest', behavior: 'smooth' });
+  if (canHover()) input.focus({ preventScroll: true });
+}
+
+function toggleThread(id) {
+  if (state.openThreads.has(id)) {
+    state.openThreads.delete(id);
+    renderSseols();
+    scrollThreadIntoView(id);
+  } else {
+    state.openThreads.add(id);
+    renderSseols();
+    focusReplyRow(id);
+  }
+}
+
+function renderThread(t, writer) {
+  const key = `thread:${t.id}`;
+  const mine = t.authorRole === state.role;
+  const editing = state.editing?.key === key;
+  const open = state.openThreads.has(t.id);
+  const expanded = state.expandedBodies.has(t.id);
+  const n = t.replies.length;
+  const last = t.replies[n - 1];
+  const showAll = state.allReplies.has(t.id);
+  const shown = showAll ? t.replies : t.replies.slice(-REPLY_PREVIEW);
+  const hiddenN = n - shown.length;
+
+  const el = document.createElement('article');
+  el.className = 'thread';
+  el.dataset.thread = t.id;
+  el.innerHTML = `
+    <div class="thread-head">
+      <span class="thread-author">${avatarOf(t.authorRole, 'sm')}${esc(t.authorName)}${t.editedAt ? '<span class="edited">수정됨</span>' : ''}</span>
+      <span class="thread-head-right">
+        ${mine && !editing ? toolsHtml(key) : ''}
+        <button type="button" class="au-label ${isCustomAu(t.au) ? 'custom' : ''}">${esc(t.au)}</button>
+      </span>
+    </div>
+    ${editing
+      ? editorHtml({ rows: 5 })
+      : `<div class="thread-body${expanded ? '' : ' clamped'}">${esc(t.text)}</div>
+         <button type="button" class="text-btn body-toggle"${expanded ? '' : ' hidden'}>${expanded ? '본문 접기' : '본문 펼치기'}</button>`}
+    <button type="button" class="reply-toggle" aria-expanded="${open}">
+      <span class="reply-toggle-info">${n ? `답글 ${n}개 · 최근 ${esc(last.authorName)}` : '답글 없음'}</span>
+      <span class="reply-toggle-act">${open ? '접기' : n ? '열기' : '답글 쓰기'}</span>
+    </button>
+    ${open ? `
+      <div class="reply-panel">
+        ${n ? `<div class="replies">
+          ${n > REPLY_PREVIEW ? `<button type="button" class="text-btn replies-more">${showAll ? '이전 답글 접기' : `이전 답글 ${hiddenN}개 더 보기`}</button>` : ''}
+          ${shown.map(replyHtml).join('')}
+        </div>` : ''}
+        <div class="reply-row">
+          <input type="text" class="field" placeholder="${esc(writer)}(으)로 이어 쓰기" />
+          <button type="button" class="btn btn-ghost">답글</button>
+        </div>
+      </div>` : ''}
+  `;
+
+  el.querySelector('.au-label').addEventListener('click', () => {
+    state.filter.au = t.au;
+    state.sseolPage = 1;
+    renderSseols();
+  });
+  el.querySelector('.body-toggle')?.addEventListener('click', () => {
+    if (state.expandedBodies.has(t.id)) {
+      state.expandedBodies.delete(t.id);
+      renderSseols();
+      scrollThreadIntoView(t.id);
+    } else {
+      state.expandedBodies.add(t.id);
+      renderSseols();
+    }
+  });
+  el.querySelector('.reply-toggle').addEventListener('click', () => toggleThread(t.id));
+  el.querySelector('.replies-more')?.addEventListener('click', () => {
+    if (state.allReplies.has(t.id)) state.allReplies.delete(t.id);
+    else state.allReplies.add(t.id);
+    renderSseols();
+  });
+
+  const input = el.querySelector('.reply-row input');
+  if (input) {
+    input.dataset.thread = t.id;
+    input.value = state.replyDrafts[t.id] || '';
+    input.addEventListener('input', () => { state.replyDrafts[t.id] = input.value; });
+    const submit = run(async () => {
+      const text = input.value.trim();
+      if (!text) return;
+      await api.createReply(t.id, text);
+      delete state.replyDrafts[t.id];
+      await refresh();
+      focusReplyRow(t.id);
+    });
+    const btn = el.querySelector('.reply-row button');
+    btn.addEventListener('mousedown', e => e.preventDefault());
+    btn.addEventListener('click', submit);
+    input.addEventListener('keydown', e => { if (e.key === 'Enter' && !e.isComposing) submit(); });
+  }
+  return el;
+}
+
+function renderSseols() {
+  const room = state.room;
+  const f = state.filter;
+  const threads = room.threads;
+
+  const counts = {};
+  threads.forEach(t => { counts[t.au] = (counts[t.au] || 0) + 1; });
+  if (f.au !== 'all' && !allAus().includes(f.au)) state.filter.au = 'all';
+  const chipBox = $('auFilterChips');
+  const chipScroll = chipBox.scrollLeft;
+  chipBox.innerHTML = '';
+  [
+    { value: 'all', label: '전체', n: threads.length, custom: false },
+    ...DEFAULT_AUS.map(a => ({ value: a, label: a, n: counts[a] || 0, custom: false })),
+    ...room.customAus.map(a => ({ value: a, label: a, n: counts[a] || 0, custom: true }))
+  ].forEach(c => {
+    const b = document.createElement('button');
+    b.type = 'button';
+    b.className = 'chip' + (c.custom ? ' custom' : '') + (state.filter.au === c.value ? ' active' : '');
+    b.innerHTML = `${esc(c.label)}<span class="chip-count">${c.n}</span>`;
+    b.addEventListener('click', () => { state.filter.au = c.value; state.sseolPage = 1; renderSseols(); });
+    chipBox.appendChild(b);
+  });
+  chipBox.scrollLeft = chipScroll;
+
+  $('filterAuthor').innerHTML = `
+    <option value="all">작성자 전체</option>
+    <option value="host">${esc(hostChar().name)}</option>
+    <option value="guest">${esc(room.guest.name)}</option>
+  `;
+  $('filterAuthor').value = f.author;
+
+  const list = sseolList();
+  const pages = Math.max(1, Math.ceil(list.length / PAGE_SIZE));
+  state.sseolPage = Math.min(Math.max(1, state.sseolPage), pages);
+  const pageList = list.slice((state.sseolPage - 1) * PAGE_SIZE, state.sseolPage * PAGE_SIZE);
+  $('filterCount').textContent = `${list.length} / ${threads.length}`;
+
+  const box = $('sseolThreadList');
+  const pager = $('sseolPager');
+  const active = document.activeElement;
+  const focusedId = active && active.matches('.reply-row input') && box.contains(active) ? active.dataset.thread : null;
+  const editSel = captureEditor(box);
+  box.innerHTML = '';
+  pager.innerHTML = '';
+  pager.hidden = true;
+
+  if (!threads.length) {
+    box.innerHTML = '<div class="empty-state">아직 작성된 썰이 없습니다.</div>';
+    return;
+  }
+  if (!list.length) {
+    box.innerHTML = '<div class="empty-state">조건에 맞는 썰이 없습니다.<br><button type="button" class="btn btn-ghost" id="btnResetFilter">필터 초기화</button></div>';
+    $('btnResetFilter').addEventListener('click', () => {
+      state.filter = defaultFilter();
+      state.sseolPage = 1;
+      $('filterQuery').value = '';
+      $('filterSort').value = 'new';
+      renderSseols();
+    });
+    return;
+  }
+
+  const writer = roleName(state.role);
+  pageList.forEach(t => box.appendChild(renderThread(t, writer)));
+  pager.hidden = pages <= 1;
+  pager.innerHTML = pagerHtml(state.sseolPage, pages, { label: '처음', page: 1, pos: 'start', mobileOnly: true });
+  updateClamps();
+  restoreEditor(box, editSel);
+  if (focusedId) threadEl(focusedId)?.querySelector('.reply-row input')?.focus({ preventScroll: true });
+}
+
+async function addThread() {
+  const text = $('newSseolText').value.trim();
+  const selected = $('newSseolAu').value;
+  const au = selected === '__custom__' ? $('newSseolAuCustom').value.trim() : selected;
+  $('composerError').textContent = '';
+  if (selected === '__custom__' && !au) { $('composerError').textContent = '새 AU 이름을 입력해 주세요.'; return; }
+  if (!text) { $('composerError').textContent = '내용을 입력해 주세요.'; return; }
+
+  const id = await api.createThread(state.room.roomId, au, text);
+  $('newSseolText').value = '';
+  $('newSseolAuCustom').value = '';
+  await refresh();
+  $('newSseolAu').value = au;
+  $('newSseolAuCustom').hidden = true;
+  const idx = sseolList().findIndex(t => t.id === id);
+  if (idx >= 0) {
+    state.sseolPage = Math.floor(idx / PAGE_SIZE) + 1;
+    renderSseols();
+    scrollThreadIntoView(id);
+  }
+}
+
+/* ---------- 역극 채팅방 ---------- */
+function sortedChannels() {
+  const order = allAus();
+  const idx = au => { const i = order.indexOf(au); return i === -1 ? order.length : i; };
+  return [...state.room.channels].sort((a, b) =>
+    idx(a.au) - idx(b.au) || time(a.createdAt) - time(b.createdAt) || (a.id < b.id ? -1 : 1));
+}
+
+function channelLabel(ch) {
+  if (ch.title) return `${ch.au} · ${ch.title}`;
+  const same = state.room.channels
+    .filter(c => c.au === ch.au)
+    .sort((a, b) => time(a.createdAt) - time(b.createdAt) || (a.id < b.id ? -1 : 1));
+  return same.length < 2 ? ch.au : `${ch.au} ${same.indexOf(ch) + 1}`;
+}
+
+function activeChannel() {
+  return state.room?.channels.find(c => c.id === state.activeChannelId) || null;
+}
+
+const channelLogs = ch => ch ? state.room.logs.filter(l => l.channelId === ch.id) : [];
+
+function ensureActiveChannel() {
+  const chs = state.room.channels;
+  if (!chs.length) { state.activeChannelId = null; return; }
+  if (chs.some(c => c.id === state.activeChannelId)) return;
+  let saved = null;
+  try { saved = localStorage.getItem(CHANNEL_KEY + state.room.roomId); } catch {}
+  state.activeChannelId = chs.some(c => c.id === saved) ? saved : sortedChannels()[0].id;
+  state.rpPage = null;
+}
+
+function setActiveChannel(id) {
+  if (!id || id === state.activeChannelId) return;
+  state.activeChannelId = id;
+  try { localStorage.setItem(CHANNEL_KEY + state.room.roomId, id); } catch {}
+  if (state.editing?.key.startsWith('log:')) state.editing = null;
+  state.toolsOpen = null;
+  state.rpPage = null;
+  state.forceScroll = true;
+  renderRp();
+  $('channelTabs').querySelector('.chip.active')?.scrollIntoView({ block: 'nearest', inline: 'nearest' });
+}
+
+function renderChannelBar() {
+  const chs = sortedChannels();
+  const counts = {};
+  state.room.logs.forEach(l => { counts[l.channelId] = (counts[l.channelId] || 0) + 1; });
+
+  const tabs = $('channelTabs');
+  const scroll = tabs.scrollLeft;
+  tabs.innerHTML = '';
+  chs.forEach(ch => {
+    const b = document.createElement('button');
+    b.type = 'button';
+    b.className = 'chip' + (isCustomAu(ch.au) ? ' custom' : '') + (ch.id === state.activeChannelId ? ' active' : '');
+    b.innerHTML = `${esc(channelLabel(ch))}<span class="chip-count">${counts[ch.id] || 0}</span>`;
+    b.addEventListener('click', () => setActiveChannel(ch.id));
+    tabs.appendChild(b);
+  });
+  tabs.scrollLeft = scroll;
+
+  const sel = $('channelSelect');
+  sel.innerHTML = chs.map(ch =>
+    `<option value="${esc(ch.id)}">${esc(channelLabel(ch))} (${counts[ch.id] || 0})</option>`).join('');
+  sel.value = state.activeChannelId || '';
+  $('btnChannelSettings').disabled = !activeChannel();
+}
+
+function openChannelForm(ch) {
+  state.channelFormId = ch ? ch.id : null;
+  fillAuSelect($('chAu'), $('chAuCustom'), ch ? ch.au : (activeChannel()?.au || DEFAULT_AUS[0]));
+  $('chAuCustom').value = '';
+  $('chName').value = ch?.title || '';
+  $('chError').textContent = '';
+  $('chFormTitle').textContent = ch ? '채팅방 설정' : '새 채팅방';
+  $('btnSubmitChannel').textContent = ch ? '저장' : '만들기';
+  $('btnDeleteChannel').hidden = !(ch && state.isHost);
+  closeModals();
+  $('modalChannelForm').classList.add('open');
+}
+
+async function submitChannel() {
+  $('chError').textContent = '';
+  const selected = $('chAu').value;
+  const au = selected === '__custom__' ? $('chAuCustom').value.trim() : selected;
+  if (!au) { $('chError').textContent = '새 AU 이름을 입력해 주세요.'; return; }
+  const title = $('chName').value.trim();
+
+  if (state.channelFormId) {
+    await api.updateChannel(state.channelFormId, au, title);
+    closeModals();
+    await refresh();
+    return;
+  }
+  const id = await api.createChannel(state.room.roomId, au, title);
+  closeModals();
+  state.activeChannelId = id;
+  try { localStorage.setItem(CHANNEL_KEY + state.room.roomId, id); } catch {}
+  if (state.editing?.key.startsWith('log:')) state.editing = null;
+  state.rpPage = null;
+  state.forceScroll = true;
+  await refresh();
+}
+
+async function deleteChannel() {
+  const ch = state.room.channels.find(c => c.id === state.channelFormId);
+  if (!ch) return;
+  const n = channelLogs(ch).length;
+  if (!confirm(`'${channelLabel(ch)}' 채팅방을 삭제할까요?\n이 채팅방의 역극 기록 ${n}개가 함께 삭제되며 되돌릴 수 없습니다.`)) return;
+  await api.deleteChannel(ch.id);
+  closeModals();
+  if (state.activeChannelId === ch.id) state.activeChannelId = null;
+  state.forceScroll = true;
+  await refresh();
+}
+
+/* ---------- 역극 ---------- */
+function setStageStatus(el, value) {
+  el.textContent = value || '상태 미설정';
+  el.classList.toggle('is-empty', !value);
+}
+
+function renderLogItem(log) {
+  const key = `log:${log.id}`;
+  const mine = log.role === state.role;
+  const editing = state.editing?.key === key;
+  const edited = log.editedAt ? '<span class="edited">수정됨</span>' : '';
+  const div = document.createElement('div');
+  div.dataset.key = key;
+
+  if (log.kind === 'narration') {
+    div.className = 'rp-narr' + (mine ? ' owned' : '') + (editing ? ' is-editing' : '');
+    div.innerHTML = editing
+      ? editorHtml({ enterSaves: true, rows: 3 })
+      : `<div class="rp-narration">${esc(log.text)}</div>${edited || mine ? `<div class="rp-sub">${edited}${mine ? toolsHtml(key) : ''}</div>` : ''}`;
+  } else if (log.kind === 'dice') {
+    div.className = 'rp-dice-row' + (mine ? ' owned' : '');
+    div.innerHTML = `<span class="rp-dice">${esc(`[${log.speaker}${log.label ? ' · ' + log.label : ''}] ${log.result}`)}</span>${mine ? toolsHtml(key, false) : ''}`;
+  } else {
+    div.className = 'rp-row' + (mine ? ' mine owned' : '') + (editing ? ' is-editing' : '');
+    div.innerHTML = `
+      ${avatarOf(log.role, 'sm')}
+      <div class="rp-post">
+        <div class="rp-meta">
+          <span class="rp-speaker">${esc(log.speaker)}</span>
+          ${log.status ? `<span class="rp-status">${esc(log.status)}</span>` : ''}
+          ${edited}
+          ${mine && !editing ? toolsHtml(key) : ''}
+        </div>
+        ${editing
+          ? editorHtml({ enterSaves: true, rows: 3 })
+          : parseMessage(log.raw).map(s => s.kind === 'speech'
+              ? `<div class="rp-bubble">${esc(s.text)}</div>`
+              : `<div class="rp-action">${esc(s.text)}</div>`).join('')}
+      </div>
+    `;
+  }
+  if (state.toolsOpen === key) div.classList.add('tools-open');
+  return div;
+}
+
+function renderRp() {
+  const room = state.room;
+  if (!room) return;
+  const ch = activeChannel();
+  const status = ch ? ch.status : { host: '', guest: '' };
+
+  renderChannelBar();
+  $('stageHostRole').textContent = state.isHost ? '호스트 · 나' : '호스트';
+  $('stageGuestRole').textContent = state.isHost ? '방문자' : '방문자 · 나';
+  $('stageHostAvatar').innerHTML = avatarOf('host', 'md');
+  $('stageGuestAvatar').innerHTML = avatarOf('guest', 'md');
+  $('stageHostName').textContent = hostChar().name;
+  $('stageGuestName').textContent = room.guest.name;
+  setStageStatus($('stageHostStatus'), status.host);
+  setStageStatus($('stageGuestStatus'), status.guest);
+  $('stageHost').classList.toggle('mine', state.isHost);
+  $('stageGuest').classList.toggle('mine', !state.isHost);
+  if (document.activeElement !== $('statusInput')) $('statusInput').value = status[state.role] || '';
+
+  // 페이지: 오래된 기록부터 5개씩 묶고, 기본은 최신 쪽
+  const logs = channelLogs(ch);
+  const pages = Math.max(1, Math.ceil(logs.length / PAGE_SIZE));
+  if (state.rpPage !== null && state.rpPage >= pages) state.rpPage = null;
+  const cur = state.rpPage ?? pages;
+  const pageLogs = logs.slice((cur - 1) * PAGE_SIZE, cur * PAGE_SIZE);
+  $('rpPager').hidden = pages <= 1;
+  $('rpPager').innerHTML = pagerHtml(cur, pages, { label: '최신', page: pages, pos: 'end' });
+
+  const box = $('rpLogContainer');
+  const nearBottom = box.scrollHeight - box.scrollTop - box.clientHeight < 80;
+  const editSel = captureEditor(box);
+  box.innerHTML = '';
+  if (!ch) box.innerHTML = '<div class="empty-state">채팅방이 없습니다. 새 채팅방을 만들어 주세요.</div>';
+  else if (!logs.length) box.innerHTML = '<div class="empty-state">이 채팅방에는 아직 기록이 없습니다.</div>';
+  pageLogs.forEach(log => box.appendChild(renderLogItem(log)));
+  restoreEditor(box, editSel);
+  if (state.forceScroll || (nearBottom && !editSel && state.rpPage === null)) box.scrollTop = box.scrollHeight;
+  state.forceScroll = false;
+}
+
+function requireChannel() {
+  const ch = activeChannel();
+  if (!ch) throw new Error('채팅방을 먼저 만들어 주세요.');
+  return ch;
+}
+
+async function commitStatusIfChanged() {
+  const ch = activeChannel();
+  if (!ch) return;
+  const text = $('statusInput').value.trim();
+  if (text === (ch.status[state.role] || '')) return;
+  await api.updateChannelStatus(ch.id, text);
+}
+
+async function sendRp() {
+  const input = $('rpInputText');
+  const raw = input.value.trim();
+  if (!raw) return;
+  const ch = requireChannel();
+  await commitStatusIfChanged();
+  await api.createChannelLog(ch.id, $('rpInputMode').value === 'narration' ? 'narration' : 'post', raw);
+  input.value = '';
+  state.rpPage = null;
+  state.forceScroll = true;
+  await refresh();
+}
+
+async function rollDice(payload) {
+  const ch = requireChannel();
+  await api.rollChannelDice(ch.id, { label: $('diceLabel').value, ...payload });
+  $('diceLabel').value = '';
+  state.rpPage = null;
+  state.forceScroll = true;
+  await refresh();
+}
+
+async function rollCustom() {
+  const expr = $('diceCustom').value;
+  if (!parseDiceExpr(expr)) {
+    $('diceError').textContent = '형식: NdM±K (최대 100개 · 1000면)';
+    return;
+  }
+  $('diceError').textContent = '';
+  $('diceCustom').value = '';
+  await rollDice({ expr });
+}
+
+function openNovelModal() {
+  const ch = activeChannel();
+  const text = channelLogs(ch).map(log => {
+    if (log.kind === 'narration') return '\n' + log.text + '\n';
+    if (log.kind === 'dice') return `(${log.speaker}${log.label ? ' · ' + log.label : ''} — ${log.result})`;
+    return parseMessage(log.raw).map(s => s.kind === 'speech' ? `${log.speaker}  “${s.text}”` : s.text).join('\n');
+  }).join('\n').trim();
+  $('novelTitle').textContent = ch ? `소설본 갈무리 · ${channelLabel(ch)}` : '소설본 갈무리';
+  $('novelTextOutput').textContent = text;
+  $('modalNovelView').classList.add('open');
+}
+
+/* ---------- 링크 입력 (공용) ---------- */
+function addLinkRow(boxId, btnId, value = '') {
+  const box = $(boxId);
+  if (box.children.length >= MAX_LINKS) return;
+  const row = document.createElement('div');
+  row.className = 'link-row';
+  row.innerHTML = `
+    <input type="url" class="field" placeholder="https://" />
+    <button type="button" class="btn btn-ghost btn-small">삭제</button>
+  `;
+  row.querySelector('input').value = value;
+  row.querySelector('button').addEventListener('click', () => {
+    row.remove();
+    if (!box.children.length) addLinkRow(boxId, btnId);
+    $(btnId).disabled = box.children.length >= MAX_LINKS;
+  });
+  box.appendChild(row);
+  $(btnId).disabled = box.children.length >= MAX_LINKS;
+}
+
+function collectLinks(boxId) {
+  const links = [...$(boxId).querySelectorAll('input')].map(i => i.value.trim()).filter(Boolean).map(normalizeUrl);
+  return links.some(l => !l) ? null : links;
+}
+
+/* ---------- 방문자 프로필 작성 / 수정 ---------- */
+const PF_INPUTS = {
+  name: 'pfName', nameAlt: 'pfNameAlt', age: 'pfAge', gender: 'pfGender', affiliation: 'pfAffiliation',
+  world: 'pfWorld', personality: 'pfPersonality', intro: 'pfIntro', appearance: 'pfAppearance',
+  relation: 'pfRelation', ng: 'pfNg', owner: 'pfOwner'
+};
+
+function renderPfAvatar() {
+  $('pfAvatarPreview').innerHTML = avatar(state.pfAvatar, $('pfName').value || '?', 'xl');
+  $('btnRemoveAvatar').hidden = !state.pfAvatar;
+}
+
+function openProfileForm(mode, charId) {
+  state.profileMode = mode;
+  state.pendingCharId = charId || null;
+  const g = mode === 'edit' ? state.room.guest : {};
+  Object.entries(PF_INPUTS).forEach(([key, id]) => { $(id).value = g[key] || ''; });
+  state.pfAvatar = g.avatar || '';
+  renderPfAvatar();
+  $('pfPassword').value = '';
+  $('pfLinks').innerHTML = '';
+  (g.links && g.links.length ? g.links : ['']).forEach(v => addLinkRow('pfLinks', 'btnAddLink', v));
+  $('pfError').textContent = '';
+  $('pfAccessSection').hidden = mode === 'edit';
+  $('pfTitle').textContent = mode === 'edit' ? '방문자 프로필 수정' : `${charById(charId)?.name || ''} — 새 교류방`;
+  $('btnSubmitProfile').textContent = mode === 'edit' ? '저장' : '생성 후 입장';
+  closeModals();
+  $('modalProfileForm').classList.add('open');
+  $('pfName').focus();
+}
+
+function collectProfile() {
+  const profile = {};
+  Object.entries(PF_INPUTS).forEach(([key, id]) => { profile[key] = $(id).value.trim(); });
+  if (!profile.name) return { error: '이름을 입력해 주세요.' };
+  const links = collectLinks('pfLinks');
+  if (!links) return { error: '링크 형식을 확인해 주세요.' };
+  profile.links = links;
+  profile.avatar = state.pfAvatar;
+  return { profile };
+}
+
+async function submitProfile() {
+  const { profile, error } = collectProfile();
+  if (error) { $('pfError').textContent = error; return; }
+
+  if (state.profileMode === 'edit') {
+    await api.updateGuestProfile(state.room.roomId, profile);
+    closeModals();
+    await refresh();
+    return;
+  }
+
+  const password = $('pfPassword').value;
+  if (password.length < 4) { $('pfError').textContent = '비밀번호는 4자 이상으로 정해 주세요.'; return; }
+  const { roomId } = await api.createRoom({ hostCharId: state.pendingCharId, guest: profile, password });
+  closeModals();
+  await enterRoom(roomId);
+}
+
+async function uploadAvatarFile(file) {
+  const blob = await resizeImage(file);
+  return api.uploadImage(blob);
+}
+
+/* ---------- 방 안 프로필 보기 ---------- */
+const GUEST_VIEW_FIELDS = [
+  ['nameAlt', '다른 표기'], ['age', '나이'], ['gender', '성별'], ['affiliation', '소속 · 직업'],
+  ['world', '세계관 · 장르'], ['personality', '성격'], ['intro', '소개'], ['appearance', '외형'],
+  ['relation', '원하는 관계성'], ['ng', '지뢰 · NG'], ['owner', '오너']
+];
+
+function renderProfileView() {
+  const c = hostChar();
+  const g = state.room.guest;
+  const hostRows = charRowsHtml(c);
+
+  $('pvHost').innerHTML = `
+    ${charHeadHtml(c, `호스트 캐릭터${state.isHost ? ' · 나' : ''}`)}
+    ${hostRows ? `<dl class="profile-dl">${hostRows}</dl>` : '<p class="pv-empty">등록된 정보가 없습니다.</p>'}
+    ${state.isHost ? `<div class="pv-actions">
+      <button type="button" class="btn btn-ghost btn-small" id="btnHostEdit">프로필 수정</button>
+      <button type="button" class="btn btn-ghost btn-small" id="btnHostAvatar">인장 변경</button>
+    </div>` : ''}
+  `;
+
+  const guestRows = GUEST_VIEW_FIELDS.filter(([key]) => g[key]).map(([key, label]) => `<dt>${esc(label)}</dt><dd>${esc(g[key])}</dd>`);
+  if (g.links && g.links.length) guestRows.push(`<dt>링크</dt><dd>${linksHtml(g.links)}</dd>`);
+
+  $('pvGuest').innerHTML = `
+    <div class="pv-head">
+      ${avatar(g.avatar, g.name, 'lg')}
+      <div>
+        <div class="pv-role">방문자${state.isHost ? '' : ' · 나'}</div>
+        <div class="pv-name">${esc(g.name)}</div>
+      </div>
+    </div>
+    ${guestRows.length ? `<dl class="profile-dl">${guestRows.join('')}</dl>` : '<p class="pv-empty">등록된 정보가 없습니다.</p>'}
+    ${state.isHost ? '' : `<div class="pv-actions">
+      <button type="button" class="btn btn-ghost btn-small" id="btnEditProfile">프로필 수정</button>
+    </div>`}
+  `;
+
+  if (state.isHost) {
+    $('btnHostEdit').addEventListener('click', () => { const ch = charById(state.room.hostCharId); if (ch) openCharForm(ch); });
+    $('btnHostAvatar').addEventListener('click', () => $('hostAvatarFile').click());
+  } else {
+    $('btnEditProfile').addEventListener('click', () => openProfileForm('edit'));
+  }
+}
+
+function openProfileView() {
+  renderProfileView();
+  $('modalProfileView').classList.add('open');
+}
+
+/* ---------- 로그인 / 입장 / 공유 ---------- */
+async function hostLogin() {
+  $('loginError').textContent = '';
+  const email = $('loginEmail').value.trim();
+  const password = $('loginPassword').value;
+  if (!email || !password) { $('loginError').textContent = '이메일과 비밀번호를 입력해 주세요.'; return; }
+  try {
+    await api.hostLogin(email, password);
+    location.href = location.pathname;
+  } catch (e) {
+    $('loginError').textContent = e.message;
+  }
+}
+
+async function logout() {
+  await api.logout();
+  location.href = location.pathname;
+}
+
+async function enterByToken() {
+  const code = $('tokenInput').value.trim();
+  const password = $('tokenPassInput').value;
+  if (!code || !password) throw new Error('입장 코드와 비밀번호를 입력해 주세요.');
+  const { roomId } = await api.joinRoom({ code, password });
+  $('tokenPassInput').value = '';
+  await enterRoom(roomId);
+}
+
+function openShareModal() {
+  const code = state.room.roomId;
+  $('shareUrlBox').value = `${location.origin}${location.pathname}?room=${encodeURIComponent(code)}`;
+  $('shareCodeBox').value = code;
+  $('modalShareRoom').classList.add('open');
+}
+
+function copyText(text, btn) {
+  if (!navigator.clipboard) return;
+  navigator.clipboard.writeText(text).then(() => {
+    const original = btn.textContent;
+    btn.textContent = '복사됨';
+    setTimeout(() => { btn.textContent = original; }, 1200);
+  }).catch(() => {});
+}
+
+function closeModals() {
+  document.querySelectorAll('.modal-backdrop').forEach(m => m.classList.remove('open'));
+}
+
+/* ---------- 이벤트 바인딩 ---------- */
+const onEnter = (el, fn) => el.addEventListener('keydown', e => { if (e.key === 'Enter' && !e.isComposing) fn(); });
+
+$('btnTheme').addEventListener('click', () => {
+  applyTheme(THEME_ORDER[(THEME_ORDER.indexOf(getTheme()) + 1) % THEME_ORDER.length]);
+});
+$('btnAuth').addEventListener('click', () => {
+  if (state.isHost) run(logout)();
+  else { $('loginError').textContent = ''; $('modalLogin').classList.add('open'); $('loginEmail').focus(); }
+});
+$('btnLogin').addEventListener('click', run(hostLogin));
+onEnter($('loginPassword'), run(hostLogin));
+
+$('btnSidebar').addEventListener('click', () => setSidebar(!$('hostSidebar').classList.contains('open')));
+$('sidebarScrim').addEventListener('click', () => setSidebar(false));
+$('btnManageChars').addEventListener('click', run(async () => { setSidebar(false); await goLobby(); }));
+$('btnBackLobby').addEventListener('click', run(goLobby));
+$('btnDeleteRoom').addEventListener('click', run(deleteRoom));
+$('tabBtnSseol').addEventListener('click', () => switchTab('sseol'));
+$('tabBtnRp').addEventListener('click', () => switchTab('rp'));
+$('btnOpenShare').addEventListener('click', openShareModal);
+$('btnOpenProfile').addEventListener('click', openProfileView);
+$('btnCvCreate').addEventListener('click', () => { if (state.viewCharId) openProfileForm('create', state.viewCharId); });
+
+$('newSseolAu').addEventListener('change', e => {
+  const custom = e.target.value === '__custom__';
+  $('newSseolAuCustom').hidden = !custom;
+  if (custom) $('newSseolAuCustom').focus();
+});
+$('btnAddSseolThread').addEventListener('click', run(addThread));
+
+$('filterAuthor').addEventListener('change', e => { state.filter.author = e.target.value; state.sseolPage = 1; renderSseols(); });
+$('filterQuery').addEventListener('input', e => { state.filter.q = e.target.value; state.sseolPage = 1; renderSseols(); });
+$('filterSort').addEventListener('change', e => { state.filter.sort = e.target.value; state.sseolPage = 1; renderSseols(); });
+
+bindItemEvents($('sseolThreadList'));
+bindItemEvents($('rpLogContainer'));
+
+// 페이지 이동
+$('sseolPager').addEventListener('click', e => {
+  const b = e.target.closest('[data-page]');
+  if (!b || b.disabled) return;
+  state.sseolPage = Number(b.dataset.page);
+  renderSseols();
+  $('filterBar').scrollIntoView({ block: 'start' });
+});
+$('rpPager').addEventListener('click', e => {
+  const b = e.target.closest('[data-page]');
+  if (!b || b.disabled) return;
+  const total = Math.max(1, Math.ceil(channelLogs(activeChannel()).length / PAGE_SIZE));
+  const p = Number(b.dataset.page);
+  state.rpPage = p >= total ? null : Math.max(1, p);
+  if (state.editing?.key.startsWith('log:')) state.editing = null;
+  state.toolsOpen = null;
+  renderRp();
+  const box = $('rpLogContainer');
+  box.scrollTop = state.rpPage === null ? box.scrollHeight : 0;
+});
+
+// 채팅방
+$('channelSelect').addEventListener('change', e => setActiveChannel(e.target.value));
+$('channelTabs').addEventListener('wheel', e => {
+  const el = e.currentTarget;
+  if (el.scrollWidth <= el.clientWidth || Math.abs(e.deltaY) <= Math.abs(e.deltaX)) return;
+  el.scrollLeft += e.deltaY;
+  e.preventDefault();
+}, { passive: false });
+$('btnNewChannel').addEventListener('click', () => openChannelForm(null));
+$('btnChannelSettings').addEventListener('click', () => { const ch = activeChannel(); if (ch) openChannelForm(ch); });
+$('chAu').addEventListener('change', e => {
+  const custom = e.target.value === '__custom__';
+  $('chAuCustom').hidden = !custom;
+  if (custom) $('chAuCustom').focus();
+});
+$('btnSubmitChannel').addEventListener('click', run(submitChannel));
+onEnter($('chName'), run(submitChannel));
+onEnter($('chAuCustom'), run(submitChannel));
+$('btnDeleteChannel').addEventListener('click', run(deleteChannel));
+
+// 역극 입력
+const applyStatus = run(async () => { await commitStatusIfChanged(); $('statusInput').blur(); await refresh(); });
+$('btnApplyStatus').addEventListener('click', applyStatus);
+onEnter($('statusInput'), applyStatus);
+
+$('btnToggleDice').addEventListener('click', () => {
+  const open = $('dicePanel').classList.toggle('open');
+  $('btnToggleDice').classList.toggle('active', open);
+});
+document.querySelectorAll('[data-dice]').forEach(btn => {
+  btn.addEventListener('click', run(() => rollDice({ expr: btn.dataset.dice })));
+});
+document.querySelectorAll('[data-special]').forEach(btn => {
+  btn.addEventListener('click', run(() => rollDice({ special: btn.dataset.special })));
+});
+const customRoll = run(rollCustom);
+$('btnRollCustom').addEventListener('click', customRoll);
+onEnter($('diceCustom'), customRoll);
+
+const send = run(sendRp);
+$('btnSendRp').addEventListener('click', send);
+onEnter($('rpInputText'), send);
+// 전송 · 주사위 버튼을 눌러도 입력칸 포커스(모바일 키보드)를 유지
+['btnSendRp', 'btnToggleDice'].forEach(id => $(id).addEventListener('mousedown', e => e.preventDefault()));
+$('btnOpenNovel').addEventListener('click', openNovelModal);
+$('btnCopyNovel').addEventListener('click', e => copyText($('novelTextOutput').textContent, e.currentTarget));
+
+// 모바일: 역극 입력 중에는 위쪽 영역을 접어 대화 공간 확보
+const rpInputArea = document.querySelector('.rp-input');
+rpInputArea.addEventListener('focusin', e => {
+  if (e.target.matches('input, textarea, select')) document.body.classList.add('rp-typing');
+});
+rpInputArea.addEventListener('focusout', () => {
+  setTimeout(() => {
+    if (!rpInputArea.contains(document.activeElement)) document.body.classList.remove('rp-typing');
+  }, 0);
+});
+
+// 방문자 프로필
+$('btnPickAvatar').addEventListener('click', () => $('pfAvatarFile').click());
+$('btnRemoveAvatar').addEventListener('click', () => { state.pfAvatar = ''; renderPfAvatar(); });
+$('pfAvatarFile').addEventListener('change', run(async e => {
+  const file = e.target.files[0];
+  e.target.value = '';
+  if (!file) return;
+  state.pfAvatar = await uploadAvatarFile(file);
+  renderPfAvatar();
+}));
+$('pfName').addEventListener('input', () => { if (!state.pfAvatar) renderPfAvatar(); });
+$('btnAddLink').addEventListener('click', () => addLinkRow('pfLinks', 'btnAddLink'));
+$('btnSubmitProfile').addEventListener('click', run(submitProfile));
+
+// 호스트 캐릭터 폼
+$('btnCfPickAvatar').addEventListener('click', () => $('cfAvatarFile').click());
+$('btnCfRemoveAvatar').addEventListener('click', () => { state.cfAvatar = ''; renderCfAvatar(); });
+$('cfAvatarFile').addEventListener('change', run(async e => {
+  const file = e.target.files[0];
+  e.target.value = '';
+  if (!file) return;
+  state.cfAvatar = await uploadAvatarFile(file);
+  renderCfAvatar();
+}));
+$('cfName').addEventListener('input', () => { if (!state.cfAvatar) renderCfAvatar(); });
+$('btnCfAddLink').addEventListener('click', () => addLinkRow('cfLinks', 'btnCfAddLink'));
+$('btnSubmitChar').addEventListener('click', run(submitChar));
+
+// 방 안 프로필에서 호스트 인장 바로 변경
+$('hostAvatarFile').addEventListener('change', run(async e => {
+  const file = e.target.files[0];
+  e.target.value = '';
+  if (!file) return;
+  const url = await uploadAvatarFile(file);
+  await api.updateCharacterAvatar(state.room.hostCharId, url);
+  await reloadCharacters();
+}));
+
+const join = run(enterByToken);
+$('btnEnterByToken').addEventListener('click', join);
+onEnter($('tokenInput'), join);
+onEnter($('tokenPassInput'), join);
+
+document.querySelectorAll('[data-copy]').forEach(btn => {
+  btn.addEventListener('click', () => copyText($(btn.dataset.copy).value, btn));
+});
+document.querySelectorAll('.btn-close-modal').forEach(btn => btn.addEventListener('click', closeModals));
+document.querySelectorAll('.modal-backdrop').forEach(m => {
+  m.addEventListener('click', e => { if (e.target === m) closeModals(); });
+});
+document.addEventListener('keydown', e => { if (e.key === 'Escape') { closeModals(); setSidebar(false); } });
+
+window.visualViewport?.addEventListener('resize', fitViewport);
+window.addEventListener('resize', fitViewport);
+window.addEventListener('orientationchange', () => setTimeout(fitViewport, 300));
+let clampTimer = null;
+window.addEventListener('resize', () => { clearTimeout(clampTimer); clampTimer = setTimeout(updateClamps, 150); });
+
+/* ---------- 시작 ---------- */
+function showPageNotice(title, body) {
+  $('appBody').innerHTML = `<div class="page-notice"><strong>${esc(title)}</strong>${body}</div>`;
+}
+
+async function init() {
+  applyTheme(getTheme());
+  fitViewport();
+
+  if (!configured) {
+    showPageNotice('연결 설정이 필요합니다',
+      'HTML 파일 안의 <code>SUPABASE_URL</code>과 <code>SUPABASE_KEY</code>에 내 프로젝트 값을 넣어 주세요.');
+    return;
+  }
+
+  try {
+    const session = await api.ensureSession();
+    state.userId = session.user.id;
+    state.isHost = await api.isHost();
+    await loadCharacters();
+    applyRoleUI();
+    await loadRooms();
+
+    const code = new URLSearchParams(location.search).get('room');
+    const known = code && state.rooms.some(r => r.roomId === code.toUpperCase());
+
+    if (known) {
+      await enterRoom(code.toUpperCase());
+    } else if (state.isHost && state.rooms.length) {
+      await enterRoom(state.rooms[0].roomId);
+    } else {
+      renderShowcase();
+      renderSidebar();
+      showView('viewShowcase');
+      if (code && !state.isHost) {
+        $('tokenInput').value = code.toUpperCase();
+        $('tokenPassInput').focus();
+      }
+    }
+
+    if (state.isHost) state.unsubscribeAll = api.subscribeAllRooms(scheduleRoomsRefresh);
+  } catch (e) {
+    showPageNotice('불러오는 중 문제가 생겼습니다', esc(e.message || '알 수 없는 오류'));
+  }
+}
+
+init();
+</script>
+</body>
+</html>
