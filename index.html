@@ -1,0 +1,1688 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>PUKA_OC</title>
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Cg fill='%23111'%3E%3Cellipse cx='4.8' cy='10.2' rx='2.1' ry='2.7'/%3E%3Cellipse cx='9.1' cy='5.6' rx='2.2' ry='2.9'/%3E%3Cellipse cx='14.9' cy='5.6' rx='2.2' ry='2.9'/%3E%3Cellipse cx='19.2' cy='10.2' rx='2.1' ry='2.7'/%3E%3Cpath d='M12 11.6c-3.2 0-6.2 3.3-6.2 6.1 0 2 1.5 3.1 3.3 3.1 1.2 0 2-.6 2.9-.6s1.7.6 2.9.6c1.8 0 3.3-1.1 3.3-3.1 0-2.8-3-6.1-6.2-6.1z'/%3E%3C/g%3E%3C/svg%3E">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard/dist/web/static/pretendard.css">
+<script>
+  (function () {
+    try {
+      var t = localStorage.getItem('puka_theme');
+      if (t === 'light' || t === 'dark') document.documentElement.setAttribute('data-theme', t);
+    } catch (e) {}
+  })();
+</script>
+<style>
+  :root {
+    color-scheme: light;
+    --bg: #ffffff;
+    --bg-sub: #f5f5f5;
+    --line: #e3e3e3;
+    --ink: #111111;
+    --ink-2: #555555;
+    --ink-3: #8a8a8a;
+    --ink-4: #b5b5b5;
+    --on-ink: #ffffff;
+    --on-ink-sub: #9a9a9a;
+    --ink-hover: #333333;
+    --paper: #fafafa;
+    --backdrop: rgba(0, 0, 0, .35);
+    --chevron: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='6' viewBox='0 0 10 6'%3E%3Cpath d='M1 1l4 4 4-4' fill='none' stroke='%23111' stroke-width='1.2'/%3E%3C/svg%3E");
+    --mono: 'SF Mono', Menlo, Consolas, monospace;
+    --serif: 'Nanum Myeongjo', 'Noto Serif KR', Georgia, serif;
+  }
+  :root[data-theme="dark"] {
+    color-scheme: dark;
+    --bg: #0f0f0f; --bg-sub: #1a1a1a; --line: #2b2b2b;
+    --ink: #ececec; --ink-2: #b3b3b3; --ink-3: #7f7f7f; --ink-4: #4f4f4f;
+    --on-ink: #0f0f0f; --on-ink-sub: #5e5e5e; --ink-hover: #cfcfcf;
+    --paper: #151515; --backdrop: rgba(0, 0, 0, .6);
+    --chevron: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='6' viewBox='0 0 10 6'%3E%3Cpath d='M1 1l4 4 4-4' fill='none' stroke='%23ececec' stroke-width='1.2'/%3E%3C/svg%3E");
+  }
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) {
+      color-scheme: dark;
+      --bg: #0f0f0f; --bg-sub: #1a1a1a; --line: #2b2b2b;
+      --ink: #ececec; --ink-2: #b3b3b3; --ink-3: #7f7f7f; --ink-4: #4f4f4f;
+      --on-ink: #0f0f0f; --on-ink-sub: #5e5e5e; --ink-hover: #cfcfcf;
+      --paper: #151515; --backdrop: rgba(0, 0, 0, .6);
+      --chevron: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='6' viewBox='0 0 10 6'%3E%3Cpath d='M1 1l4 4 4-4' fill='none' stroke='%23ececec' stroke-width='1.2'/%3E%3C/svg%3E");
+    }
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  [hidden] { display: none !important; }
+  html, body { height: 100%; }
+  body {
+    font-family: 'Pretendard', -apple-system, BlinkMacSystemFont, 'Apple SD Gothic Neo', 'Segoe UI', sans-serif;
+    background: var(--bg); color: var(--ink);
+    font-size: 14px; line-height: 1.5; letter-spacing: -0.01em;
+    height: 100vh; display: flex; flex-direction: column; overflow: hidden;
+    -webkit-font-smoothing: antialiased;
+    transition: background .2s, color .2s;
+  }
+  button, input, select, textarea { font: inherit; color: inherit; letter-spacing: inherit; }
+  button { cursor: pointer; }
+  button:disabled { opacity: .5; cursor: default; }
+
+  .btn {
+    background: var(--bg); border: 1px solid var(--ink);
+    padding: 8px 14px; font-size: 13px; line-height: 1.2; white-space: nowrap;
+    transition: background .15s, color .15s, border-color .15s;
+  }
+  .btn:hover:not(:disabled) { background: var(--ink); color: var(--on-ink); }
+  .btn-solid { background: var(--ink); color: var(--on-ink); }
+  .btn-solid:hover:not(:disabled) { background: var(--ink-hover); border-color: var(--ink-hover); }
+  .btn-ghost { border-color: var(--line); }
+  .btn-ghost:hover:not(:disabled) { background: var(--bg); color: var(--ink); border-color: var(--ink); }
+  .btn-ghost.active { background: var(--ink); border-color: var(--ink); color: var(--on-ink); }
+  .btn-small { padding: 6px 10px; font-size: 12.5px; }
+  .btn-block { width: 100%; }
+
+  .field {
+    background: var(--bg); border: 1px solid var(--line); border-radius: 0;
+    padding: 9px 12px; font-size: 13.5px; outline: none; transition: border-color .15s;
+  }
+  .field:focus { border-color: var(--ink); }
+  .field::placeholder { color: var(--ink-4); }
+  textarea.field { resize: vertical; line-height: 1.6; }
+  select.field {
+    appearance: none; -webkit-appearance: none; padding-right: 30px;
+    background-image: var(--chevron); background-repeat: no-repeat; background-position: right 11px center;
+  }
+
+  .seg { display: inline-flex; border: 1px solid var(--ink); }
+  .seg button { background: var(--bg); border: none; padding: 7px 16px; font-size: 13px; }
+  .seg button + button { border-left: 1px solid var(--ink); }
+  .seg button.active { background: var(--ink); color: var(--on-ink); }
+
+  .chip { background: var(--bg); border: 1px solid var(--line); padding: 5px 10px; font-size: 12.5px; transition: border-color .15s; }
+  .chip:hover { border-color: var(--ink); }
+  .chip.custom { border-style: dashed; }
+  .chip.active { background: var(--ink); border-color: var(--ink); border-style: solid; color: var(--on-ink); }
+  .chip-count { color: var(--ink-4); margin-left: 4px; font-size: 11.5px; }
+  .chip.active .chip-count { color: var(--on-ink-sub); }
+
+  .avatar {
+    display: inline-flex; align-items: center; justify-content: center; flex-shrink: 0;
+    border: 1px solid var(--line); background: var(--bg-sub); color: var(--ink-3);
+    font-weight: 600; overflow: hidden; line-height: 1;
+  }
+  .avatar img { width: 100%; height: 100%; object-fit: cover; display: block; }
+  .avatar.xs { width: 20px; height: 20px; font-size: 10px; }
+  .avatar.sm { width: 32px; height: 32px; font-size: 12px; }
+  .avatar.md { width: 40px; height: 40px; font-size: 14px; }
+  .avatar.lg { width: 64px; height: 64px; font-size: 20px; }
+  .avatar.xl { width: 80px; height: 80px; font-size: 24px; }
+
+  header {
+    height: 52px; flex-shrink: 0; display: flex; align-items: center; justify-content: space-between;
+    padding: 0 20px; border-bottom: 1px solid var(--ink);
+  }
+  .brand { display: flex; align-items: center; color: var(--ink); }
+  .header-right { display: flex; align-items: center; gap: 8px; }
+  .role-text { font-size: 12.5px; color: var(--ink-3); margin-right: 4px; }
+
+  .app-body { flex: 1; display: flex; overflow: hidden; }
+
+  .sidebar { width: 260px; flex-shrink: 0; border-right: 1px solid var(--line); display: flex; flex-direction: column; }
+  .sidebar.hidden { display: none; }
+  .sidebar-head { padding: 20px 18px 14px; border-bottom: 1px solid var(--line); }
+  .eyebrow { font-size: 11px; letter-spacing: .08em; text-transform: uppercase; color: var(--ink-3); display: flex; justify-content: space-between; }
+  .sidebar-note { font-size: 12px; color: var(--ink-3); margin: 8px 0 12px; line-height: 1.55; }
+  .room-list { flex: 1; overflow-y: auto; }
+  .room-empty { padding: 24px 18px; font-size: 12.5px; color: var(--ink-3); }
+  .room-item { padding: 14px 18px; border-bottom: 1px solid var(--line); cursor: pointer; transition: background .15s; }
+  .room-item:hover { background: var(--bg-sub); }
+  .room-item.active { background: var(--ink); color: var(--on-ink); }
+  .room-code { font-family: var(--mono); font-size: 11px; color: var(--ink-3); }
+  .room-name { font-weight: 600; font-size: 14px; margin: 4px 0 2px; }
+  .room-meta { font-size: 12px; color: var(--ink-3); }
+  .room-item.active .room-code, .room-item.active .room-meta { color: var(--on-ink-sub); }
+
+  .main-stage { flex: 1; display: flex; flex-direction: column; overflow: hidden; }
+  .view-section { display: none; flex: 1; flex-direction: column; overflow: hidden; }
+  .view-section.active { display: flex; }
+
+  #viewShowcase { overflow-y: auto; }
+  .lobby { max-width: 1040px; width: 100%; margin: 0 auto; padding: 56px 28px; }
+  .lobby-head { margin-bottom: 40px; padding-bottom: 32px; border-bottom: 1px solid var(--ink); }
+  .lobby-head h1 { font-size: 26px; font-weight: 600; letter-spacing: -0.03em; margin-bottom: 8px; }
+  .lobby-head p { color: var(--ink-2); font-size: 14px; }
+  .token-bar { display: flex; gap: 8px; margin-top: 24px; max-width: 560px; }
+  .token-bar #tokenInput { flex: 1; }
+  .token-bar #tokenPassInput { width: 140px; }
+
+  .lobby-section-title { font-size: 11px; letter-spacing: .08em; color: var(--ink-3); margin-bottom: 10px; }
+  .my-rooms { margin-bottom: 40px; }
+  .my-room-list { border-top: 1px solid var(--line); }
+  .my-room { display: flex; align-items: center; gap: 12px; padding: 12px 4px; border-bottom: 1px solid var(--line); cursor: pointer; transition: background .15s; }
+  .my-room:hover { background: var(--bg-sub); }
+  .my-room-name { font-weight: 600; font-size: 14px; }
+  .my-room-code { font-family: var(--mono); font-size: 11.5px; color: var(--ink-3); margin-left: auto; }
+
+  .char-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(230px, 1fr)); border-top: 1px solid var(--line); border-left: 1px solid var(--line); }
+  .char-card { border-right: 1px solid var(--line); border-bottom: 1px solid var(--line); padding: 22px; display: flex; flex-direction: column; transition: background .15s; }
+  .char-card:hover { background: var(--bg-sub); }
+  .card-top { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 18px; }
+  .card-top-right { display: flex; align-items: center; gap: 8px; }
+  .card-code { font-family: var(--mono); font-size: 12px; color: var(--ink-3); }
+  .card-status { border: 1px solid var(--ink); padding: 2px 8px; font-size: 11.5px; }
+  .card-status.muted { border-color: var(--line); color: var(--ink-3); }
+  .card-name { font-size: 19px; font-weight: 600; letter-spacing: -0.02em; }
+  .card-sub { font-size: 13px; font-weight: 400; color: var(--ink-3); margin-left: 6px; }
+  .card-tags { display: flex; flex-wrap: wrap; gap: 4px 10px; margin: 10px 0 14px; font-size: 12px; color: var(--ink-2); }
+  .card-desc { font-size: 13px; color: var(--ink-2); line-height: 1.65; flex: 1; margin-bottom: 22px; }
+
+  .room-head { display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 12px; padding: 14px 24px; border-bottom: 1px solid var(--line); flex-shrink: 0; }
+  .room-title { font-size: 16px; font-weight: 600; letter-spacing: -0.02em; }
+  .room-sub { font-size: 12px; color: var(--ink-3); margin-top: 2px; }
+  .room-actions { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; }
+
+  .sub-panel { display: none; flex: 1; overflow: hidden; }
+  .sub-panel.active { display: flex; }
+
+  .sseol-scroll { flex: 1; overflow-y: auto; }
+  .sseol-feed { max-width: 760px; margin: 0 auto; padding: 28px 24px 64px; }
+  .composer { border: 1px solid var(--ink); padding: 16px; }
+  .composer-top { display: flex; justify-content: space-between; align-items: center; gap: 8px; flex-wrap: wrap; margin-bottom: 10px; }
+  .composer-au { display: flex; gap: 6px; flex-wrap: wrap; flex: 1; }
+  #newSseolAuCustom { flex: 1; min-width: 180px; max-width: 260px; }
+  .composer-writer { display: flex; align-items: center; gap: 8px; font-size: 12.5px; color: var(--ink-3); }
+  .composer-writer strong { color: var(--ink); font-weight: 600; }
+  .composer textarea { width: 100%; min-height: 84px; }
+  .composer-bottom { display: flex; justify-content: space-between; align-items: center; margin-top: 10px; gap: 8px; }
+  .composer-error { font-size: 12px; color: var(--ink-2); }
+
+  .filter-bar { margin-top: 36px; padding-bottom: 14px; border-bottom: 1px solid var(--ink); display: flex; flex-direction: column; gap: 10px; }
+  .filter-row { display: flex; flex-wrap: wrap; gap: 6px; align-items: center; }
+  .filter-row .field { padding: 7px 10px; font-size: 13px; }
+  .filter-row select.field { padding-right: 30px; }
+  #filterQuery { flex: 1; min-width: 160px; }
+  .filter-count { margin-left: auto; font-family: var(--mono); font-size: 12px; color: var(--ink-3); }
+
+  .thread { padding: 22px 0; border-bottom: 1px solid var(--line); }
+  .thread-head { display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px; gap: 10px; }
+  .thread-author { display: flex; align-items: center; gap: 10px; font-size: 13.5px; font-weight: 600; }
+  .au-label { background: none; border: 1px solid var(--line); padding: 2px 8px; font-size: 11.5px; color: var(--ink-2); }
+  .au-label.custom { border-style: dashed; }
+  .au-label:hover { border-color: var(--ink); color: var(--ink); }
+  .thread-body { font-size: 14.5px; line-height: 1.75; white-space: pre-line; word-break: break-word; }
+  .replies { margin-top: 14px; padding-left: 14px; border-left: 1px solid var(--ink); display: flex; flex-direction: column; gap: 10px; }
+  .reply { display: flex; gap: 8px; align-items: flex-start; font-size: 13.5px; line-height: 1.65; color: var(--ink-2); word-break: break-word; }
+  .reply strong { color: var(--ink); font-weight: 600; margin-right: 6px; }
+  .reply-row { display: flex; gap: 6px; margin-top: 12px; }
+  .reply-row .field { flex: 1; padding: 7px 10px; font-size: 13px; }
+  .empty-state { padding: 56px 0; text-align: center; color: var(--ink-3); font-size: 13px; }
+  .empty-state .btn { margin-top: 14px; }
+
+  .rp { display: flex; flex-direction: column; width: 100%; height: 100%; }
+  .rp-stage { display: flex; border-bottom: 1px solid var(--line); flex-shrink: 0; }
+  .stage-box { flex: 1; display: flex; align-items: center; gap: 12px; padding: 14px 24px; border-right: 1px solid var(--line); position: relative; min-width: 0; }
+  .stage-box.mine::before { content: ''; position: absolute; left: 0; top: 0; bottom: 0; width: 2px; background: var(--ink); }
+  .stage-info { min-width: 0; }
+  .stage-role { font-size: 11px; letter-spacing: .06em; color: var(--ink-3); }
+  .stage-name { font-size: 15px; font-weight: 600; margin: 2px 0 3px; }
+  .stage-status { font-size: 12.5px; color: var(--ink-2); line-height: 1.5; }
+  .stage-status.is-empty { color: var(--ink-4); }
+  .stage-actions { display: flex; align-items: center; padding: 0 20px; }
+
+  .rp-log { flex: 1; overflow-y: auto; padding: 28px; display: flex; flex-direction: column; gap: 18px; }
+  .rp-narration { align-self: center; max-width: 580px; text-align: center; font-family: var(--serif); font-size: 14px; line-height: 1.85; color: var(--ink-2); white-space: pre-wrap; word-break: break-word; }
+  .rp-dice { align-self: center; font-family: var(--mono); font-size: 12px; color: var(--ink-2); border: 1px solid var(--line); padding: 5px 12px; }
+  .rp-row { display: flex; gap: 10px; align-items: flex-start; max-width: 72%; }
+  .rp-row.mine { align-self: flex-end; flex-direction: row-reverse; }
+  .rp-post { display: flex; flex-direction: column; align-items: flex-start; gap: 6px; min-width: 0; }
+  .rp-row.mine .rp-post { align-items: flex-end; }
+  .rp-meta { display: flex; gap: 8px; align-items: baseline; font-size: 12px; }
+  .rp-speaker { font-weight: 600; }
+  .rp-status { color: var(--ink-3); }
+  .rp-bubble { border: 1px solid var(--line); padding: 10px 14px; font-size: 14px; line-height: 1.65; white-space: pre-wrap; word-break: break-word; }
+  .rp-row.mine .rp-bubble { background: var(--ink); border-color: var(--ink); color: var(--on-ink); }
+  .rp-action { font-family: var(--serif); font-size: 13.5px; line-height: 1.75; color: var(--ink-2); padding: 0 2px; word-break: break-word; }
+  .rp-row.mine .rp-action { text-align: right; }
+
+  .rp-input { border-top: 1px solid var(--ink); padding: 14px 20px 12px; display: flex; flex-direction: column; gap: 8px; flex-shrink: 0; }
+  .status-row, .input-row { display: flex; gap: 6px; align-items: center; }
+  .row-label { font-size: 12px; color: var(--ink-3); width: 64px; flex-shrink: 0; }
+  .status-row .field { flex: 1; padding: 7px 10px; font-size: 13px; }
+  .input-row .field { flex: 1; }
+  .input-row select.field { flex: 0 0 auto; }
+  .input-hint { font-size: 11.5px; color: var(--ink-4); line-height: 1.6; }
+  .input-hint code { font-family: var(--mono); color: var(--ink-3); }
+
+  .dice-panel { display: none; flex-direction: column; gap: 10px; border: 1px solid var(--line); padding: 12px; }
+  .dice-panel.open { display: flex; }
+  .dice-group { display: flex; flex-wrap: wrap; gap: 6px; align-items: center; }
+  .dice-group .field { padding: 6px 10px; font-size: 12.5px; }
+  #diceLabel { flex: 1; }
+  #diceCustom { width: 130px; font-family: var(--mono); }
+  .dice-error { font-size: 11.5px; color: var(--ink-3); }
+
+  .modal-backdrop { position: fixed; inset: 0; background: var(--backdrop); display: none; align-items: center; justify-content: center; padding: 20px; z-index: 100; }
+  .modal-backdrop.open { display: flex; }
+  .modal-box { background: var(--bg); border: 1px solid var(--ink); width: 100%; max-width: 460px; max-height: calc(100vh - 40px); overflow-y: auto; padding: 26px; }
+  .modal-box.wide { max-width: 640px; }
+  .modal-box.xwide { max-width: 780px; }
+  .modal-box.form { max-width: 560px; }
+  .modal-title { font-size: 16px; font-weight: 600; margin-bottom: 6px; }
+  .modal-desc { font-size: 13px; color: var(--ink-2); line-height: 1.6; margin-bottom: 8px; }
+  .form-section-title { font-size: 11px; letter-spacing: .08em; color: var(--ink-3); padding-bottom: 6px; border-bottom: 1px solid var(--line); margin: 22px 0 12px; }
+  .form-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 0 10px; }
+  .form-group { margin-bottom: 12px; }
+  .form-group label { display: block; font-size: 12px; color: var(--ink-3); margin-bottom: 6px; }
+  .form-group .field { width: 100%; }
+  .form-hint { font-size: 11.5px; color: var(--ink-4); margin-top: 6px; }
+  .form-error { font-size: 12.5px; color: var(--ink); margin-top: 14px; min-height: 1em; }
+  .link-row { display: flex; gap: 6px; margin-bottom: 6px; }
+  .link-row .field { flex: 1; font-family: var(--mono); font-size: 12.5px; }
+  .copy-row { display: flex; gap: 6px; }
+  .copy-row .field { flex: 1; font-family: var(--mono); font-size: 12.5px; }
+  .modal-foot { display: flex; justify-content: flex-end; gap: 6px; margin-top: 20px; }
+
+  .avatar-field { display: flex; gap: 16px; align-items: center; }
+  .avatar-actions { display: flex; flex-direction: column; gap: 6px; align-items: flex-start; }
+  .avatar-actions .btn-row { display: flex; gap: 6px; }
+
+  .profile-cols { display: grid; grid-template-columns: 1fr 1fr; border: 1px solid var(--line); margin-top: 16px; }
+  .profile-col { padding: 20px; min-width: 0; }
+  .profile-col + .profile-col { border-left: 1px solid var(--line); }
+  .pv-head { display: flex; gap: 14px; align-items: center; margin-bottom: 4px; }
+  .pv-role { font-size: 11px; letter-spacing: .06em; color: var(--ink-3); }
+  .pv-name { font-size: 17px; font-weight: 600; letter-spacing: -0.02em; margin-top: 2px; }
+  .pv-actions { display: flex; gap: 6px; margin-top: 18px; }
+  .profile-dl { display: grid; grid-template-columns: 84px 1fr; gap: 9px 12px; font-size: 13px; margin-top: 18px; }
+  .profile-dl dt { color: var(--ink-3); font-size: 12px; padding-top: 1px; }
+  .profile-dl dd { line-height: 1.6; white-space: pre-line; word-break: break-word; }
+  .profile-dl a { color: var(--ink); text-underline-offset: 3px; font-family: var(--mono); font-size: 12px; display: block; }
+  .pv-empty { font-size: 12.5px; color: var(--ink-3); margin-top: 18px; }
+  @media (max-width: 680px) {
+    .profile-cols { grid-template-columns: 1fr; }
+    .profile-col + .profile-col { border-left: none; border-top: 1px solid var(--line); }
+  }
+
+  .novel-paper { border: 1px solid var(--line); background: var(--paper); padding: 22px 24px; max-height: 380px; overflow-y: auto; font-family: var(--serif); font-size: 14px; line-height: 1.95; white-space: pre-wrap; margin-top: 14px; }
+
+  .page-notice { margin: auto; max-width: 480px; padding: 32px; border: 1px solid var(--ink); font-size: 13.5px; line-height: 1.7; }
+  .page-notice strong { display: block; font-size: 15px; margin-bottom: 8px; }
+  .page-notice code { font-family: var(--mono); font-size: 12.5px; }
+</style>
+</head>
+<body>
+
+<header>
+  <div class="brand" aria-label="PUKA_OC">
+    <svg width="22" height="22" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
+      <ellipse cx="4.8" cy="10.2" rx="2.1" ry="2.7" transform="rotate(-22 4.8 10.2)"/>
+      <ellipse cx="9.1" cy="5.6" rx="2.2" ry="2.9" transform="rotate(-8 9.1 5.6)"/>
+      <ellipse cx="14.9" cy="5.6" rx="2.2" ry="2.9" transform="rotate(8 14.9 5.6)"/>
+      <ellipse cx="19.2" cy="10.2" rx="2.1" ry="2.7" transform="rotate(22 19.2 10.2)"/>
+      <path d="M12 11.6c-3.2 0-6.2 3.3-6.2 6.1 0 2 1.5 3.1 3.3 3.1 1.2 0 2-.6 2.9-.6s1.7.6 2.9.6c1.8 0 3.3-1.1 3.3-3.1 0-2.8-3-6.1-6.2-6.1z"/>
+    </svg>
+  </div>
+  <div class="header-right">
+    <span class="role-text" id="currentRoleText"></span>
+    <button type="button" class="btn btn-ghost btn-small" id="btnTheme">테마 · 시스템</button>
+    <button type="button" class="btn btn-ghost btn-small" id="btnAuth">호스트 로그인</button>
+  </div>
+</header>
+
+<div class="app-body" id="appBody">
+  <aside class="sidebar hidden" id="hostSidebar">
+    <div class="sidebar-head">
+      <div class="eyebrow"><span>Pair Rooms</span><span id="sidebarRoomCount">0</span></div>
+      <p class="sidebar-note">방을 선택하면 입력 페르소나가 해당 캐릭터로 전환됩니다.</p>
+      <button type="button" class="btn btn-ghost btn-small btn-block" id="btnHostShowcase">쇼케이스 미리보기</button>
+    </div>
+    <div class="room-list" id="roomListContainer"></div>
+  </aside>
+
+  <main class="main-stage">
+
+    <!-- 쇼케이스 / 로비 -->
+    <section class="view-section active" id="viewShowcase">
+      <div class="lobby">
+        <div class="lobby-head">
+          <h1>누구와 이야기를 나누시겠습니까?</h1>
+          <p>캐릭터를 선택해 1:1 교류방을 만들거나, 발급받은 입장 코드로 이어서 들어갈 수 있습니다.</p>
+          <div class="token-bar" id="tokenBar">
+            <input type="text" class="field" id="tokenInput" placeholder="입장 코드" autocomplete="off" />
+            <input type="password" class="field" id="tokenPassInput" placeholder="비밀번호" autocomplete="current-password" />
+            <button type="button" class="btn btn-solid" id="btnEnterByToken">입장</button>
+          </div>
+        </div>
+
+        <div class="my-rooms" id="myRoomsSection" hidden>
+          <div class="lobby-section-title">내 교류방</div>
+          <div class="my-room-list" id="myRoomsList"></div>
+        </div>
+
+        <div class="char-grid" id="showcaseGrid"></div>
+      </div>
+    </section>
+
+    <!-- 페어 룸 -->
+    <section class="view-section" id="viewPairRoom">
+      <div class="room-head">
+        <div>
+          <div class="room-title" id="pairHeaderTitle"></div>
+          <div class="room-sub" id="activePersonaBadge"></div>
+        </div>
+        <div class="room-actions">
+          <button type="button" class="btn btn-ghost" id="btnBackLobby" hidden>로비</button>
+          <div class="seg">
+            <button type="button" class="active" id="tabBtnSseol">썰풀이</button>
+            <button type="button" id="tabBtnRp">역극</button>
+          </div>
+          <button type="button" class="btn btn-ghost" id="btnOpenProfile">프로필</button>
+          <button type="button" class="btn btn-ghost" id="btnOpenShare">초대 링크</button>
+        </div>
+      </div>
+
+      <!-- 썰풀이 -->
+      <div class="sub-panel active" id="panelSseol">
+        <div class="sseol-scroll">
+          <div class="sseol-feed">
+            <div class="composer">
+              <div class="composer-top">
+                <div class="composer-au">
+                  <select class="field" id="newSseolAu"></select>
+                  <input type="text" class="field" id="newSseolAuCustom" maxlength="20" placeholder="새 AU 이름" hidden />
+                </div>
+                <span class="composer-writer"><span id="sseolWriterAvatar"></span>작성자 <strong id="sseolWriterName"></strong></span>
+              </div>
+              <textarea class="field" id="newSseolText" placeholder="썰 내용"></textarea>
+              <div class="composer-bottom">
+                <span class="composer-error" id="composerError"></span>
+                <button type="button" class="btn btn-solid" id="btnAddSseolThread">썰 올리기</button>
+              </div>
+            </div>
+
+            <div class="filter-bar">
+              <div class="filter-row" id="auFilterChips"></div>
+              <div class="filter-row">
+                <select class="field" id="filterAuthor"></select>
+                <input type="text" class="field" id="filterQuery" placeholder="본문 · 답글 검색" />
+                <select class="field" id="filterSort">
+                  <option value="new">최신순</option>
+                  <option value="old">오래된순</option>
+                  <option value="replies">답글 많은 순</option>
+                </select>
+                <span class="filter-count" id="filterCount"></span>
+              </div>
+            </div>
+
+            <div id="sseolThreadList"></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- 역극 -->
+      <div class="sub-panel" id="panelRp">
+        <div class="rp">
+          <div class="rp-stage">
+            <div class="stage-box" id="stageHost">
+              <span id="stageHostAvatar"></span>
+              <div class="stage-info">
+                <div class="stage-role" id="stageHostRole">호스트</div>
+                <div class="stage-name" id="stageHostName"></div>
+                <div class="stage-status" id="stageHostStatus"></div>
+              </div>
+            </div>
+            <div class="stage-box" id="stageGuest">
+              <span id="stageGuestAvatar"></span>
+              <div class="stage-info">
+                <div class="stage-role" id="stageGuestRole">방문자</div>
+                <div class="stage-name" id="stageGuestName"></div>
+                <div class="stage-status" id="stageGuestStatus"></div>
+              </div>
+            </div>
+            <div class="stage-actions">
+              <button type="button" class="btn btn-ghost" id="btnOpenNovel">소설 뷰로 갈무리</button>
+            </div>
+          </div>
+
+          <div class="rp-log" id="rpLogContainer"></div>
+
+          <div class="rp-input">
+            <div class="status-row">
+              <label class="row-label" for="statusInput">현재 상태</label>
+              <input type="text" class="field" id="statusInput" maxlength="60" placeholder="상대에게 보여줄 지금의 상태" />
+              <button type="button" class="btn btn-ghost" id="btnApplyStatus">적용</button>
+            </div>
+
+            <div class="dice-panel" id="dicePanel">
+              <div class="dice-group">
+                <span class="row-label">판정</span>
+                <input type="text" class="field" id="diceLabel" maxlength="30" placeholder="판정 내용 (선택)" />
+              </div>
+              <div class="dice-group">
+                <span class="row-label">기본</span>
+                <button type="button" class="chip" data-dice="d4">d4</button>
+                <button type="button" class="chip" data-dice="d6">d6</button>
+                <button type="button" class="chip" data-dice="d8">d8</button>
+                <button type="button" class="chip" data-dice="d10">d10</button>
+                <button type="button" class="chip" data-dice="d12">d12</button>
+                <button type="button" class="chip" data-dice="d20">d20</button>
+                <button type="button" class="chip" data-dice="d100">d100</button>
+              </div>
+              <div class="dice-group">
+                <span class="row-label">특수</span>
+                <button type="button" class="chip" data-special="coin">동전</button>
+                <button type="button" class="chip" data-special="adv">유리 (2d20 높은 값)</button>
+                <button type="button" class="chip" data-special="dis">불리 (2d20 낮은 값)</button>
+                <button type="button" class="chip" data-dice="2d6">2d6</button>
+                <button type="button" class="chip" data-dice="3d6">3d6</button>
+              </div>
+              <div class="dice-group">
+                <span class="row-label">직접 입력</span>
+                <input type="text" class="field" id="diceCustom" placeholder="NdM±K" />
+                <button type="button" class="btn btn-ghost btn-small" id="btnRollCustom">굴리기</button>
+                <span class="dice-error" id="diceError"></span>
+              </div>
+            </div>
+
+            <div class="input-row">
+              <select class="field" id="rpInputMode">
+                <option value="post">캐릭터</option>
+                <option value="narration">장면 서술</option>
+              </select>
+              <input type="text" class="field" id="rpInputText" placeholder="대사나 지문을 입력하세요" />
+              <button type="button" class="btn btn-ghost" id="btnToggleDice">주사위</button>
+              <button type="button" class="btn btn-solid" id="btnSendRp">전송</button>
+            </div>
+            <div class="input-hint">
+              <code>"따옴표"</code> 안은 대사, <code>(괄호)</code> 안과 따옴표 밖 문장은 행동, 장면 서술로 변경시 나레이션 지문으로 나뉩니다. 기호 없이 쓰면 대사로 보내집니다.
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+  </main>
+</div>
+
+<!-- 호스트 로그인 -->
+<div class="modal-backdrop" id="modalLogin">
+  <div class="modal-box">
+    <div class="modal-title">호스트 로그인</div>
+    <p class="modal-desc">호스트 계정으로 로그인하면 모든 교류방을 관리할 수 있습니다.</p>
+    <div class="form-group" style="margin-top:16px;">
+      <label for="loginEmail">이메일</label>
+      <input type="email" class="field" id="loginEmail" autocomplete="username" />
+    </div>
+    <div class="form-group">
+      <label for="loginPassword">비밀번호</label>
+      <input type="password" class="field" id="loginPassword" autocomplete="current-password" />
+    </div>
+    <div class="form-error" id="loginError"></div>
+    <div class="modal-foot">
+      <button type="button" class="btn btn-ghost btn-close-modal">취소</button>
+      <button type="button" class="btn btn-solid" id="btnLogin">로그인</button>
+    </div>
+  </div>
+</div>
+
+<!-- 방문자 프로필 작성 / 수정 -->
+<div class="modal-backdrop" id="modalProfileForm">
+  <div class="modal-box form">
+    <div class="modal-title" id="pfTitle">새 교류방 만들기</div>
+    <p class="modal-desc">이름만 필수입니다. 상세 설정은 아래 링크로 대신해도 괜찮아요.</p>
+
+    <div class="form-section-title">인장</div>
+    <div class="avatar-field">
+      <span id="pfAvatarPreview"></span>
+      <div class="avatar-actions">
+        <div class="btn-row">
+          <button type="button" class="btn btn-ghost btn-small" id="btnPickAvatar">이미지 선택</button>
+          <button type="button" class="btn btn-ghost btn-small" id="btnRemoveAvatar" hidden>삭제</button>
+        </div>
+        <p class="form-hint">정사각형으로 잘려 저장됩니다.</p>
+      </div>
+      <input type="file" id="pfAvatarFile" accept="image/*" hidden />
+    </div>
+
+    <div class="form-section-title">기본 정보</div>
+    <div class="form-grid">
+      <div class="form-group"><label for="pfName">이름 *</label><input type="text" class="field" id="pfName" maxlength="30" /></div>
+      <div class="form-group"><label for="pfNameAlt">다른 표기</label><input type="text" class="field" id="pfNameAlt" maxlength="40" /></div>
+      <div class="form-group"><label for="pfAge">나이</label><input type="text" class="field" id="pfAge" maxlength="20" /></div>
+      <div class="form-group"><label for="pfGender">성별</label><input type="text" class="field" id="pfGender" maxlength="20" /></div>
+      <div class="form-group"><label for="pfAffiliation">소속 · 직업</label><input type="text" class="field" id="pfAffiliation" maxlength="40" /></div>
+      <div class="form-group"><label for="pfWorld">세계관 · 장르</label><input type="text" class="field" id="pfWorld" maxlength="40" /></div>
+    </div>
+
+    <div class="form-section-title">캐릭터</div>
+    <div class="form-group"><label for="pfPersonality">성격 키워드</label><input type="text" class="field" id="pfPersonality" maxlength="80" /></div>
+    <div class="form-group"><label for="pfIntro">한 줄 소개</label><input type="text" class="field" id="pfIntro" maxlength="100" /></div>
+    <div class="form-group"><label for="pfAppearance">외형</label><textarea class="field" id="pfAppearance" rows="2" maxlength="300"></textarea></div>
+
+    <div class="form-section-title">교류</div>
+    <div class="form-group"><label for="pfRelation">원하는 관계성</label><input type="text" class="field" id="pfRelation" maxlength="100" /></div>
+    <div class="form-group"><label for="pfNg">지뢰 · NG</label><input type="text" class="field" id="pfNg" maxlength="100" /></div>
+    <div class="form-group"><label for="pfOwner">오너 닉네임</label><input type="text" class="field" id="pfOwner" maxlength="30" placeholder="선택" /></div>
+
+    <div class="form-section-title">프로필 링크</div>
+    <div id="pfLinks"></div>
+    <button type="button" class="btn btn-ghost btn-small" id="btnAddLink">+ 링크 추가</button>
+    <p class="form-hint">최대 5개까지 추가할 수 있습니다.</p>
+
+    <div id="pfAccessSection">
+      <div class="form-section-title">입장</div>
+      <div class="form-group">
+        <label for="pfPassword">방 비밀번호 * (4자 이상, 재입장 시 사용)</label>
+        <input type="password" class="field" id="pfPassword" maxlength="40" autocomplete="new-password" />
+      </div>
+    </div>
+
+    <div class="form-error" id="pfError"></div>
+    <div class="modal-foot">
+      <button type="button" class="btn btn-ghost btn-close-modal">취소</button>
+      <button type="button" class="btn btn-solid" id="btnSubmitProfile">생성 후 입장</button>
+    </div>
+  </div>
+</div>
+
+<!-- 프로필 보기 -->
+<div class="modal-backdrop" id="modalProfileView">
+  <div class="modal-box xwide">
+    <div class="modal-title">프로필</div>
+    <div class="profile-cols">
+      <section class="profile-col" id="pvHost"></section>
+      <section class="profile-col" id="pvGuest"></section>
+    </div>
+    <div class="modal-foot">
+      <button type="button" class="btn btn-solid btn-close-modal">닫기</button>
+    </div>
+  </div>
+</div>
+<input type="file" id="hostAvatarFile" accept="image/*" hidden />
+
+<!-- 소설 뷰 -->
+<div class="modal-backdrop" id="modalNovelView">
+  <div class="modal-box wide">
+    <div class="modal-title">소설본 갈무리</div>
+    <div class="novel-paper" id="novelTextOutput"></div>
+    <div class="modal-foot">
+      <button type="button" class="btn btn-ghost" id="btnCopyNovel">전체 복사</button>
+      <button type="button" class="btn btn-solid btn-close-modal">닫기</button>
+    </div>
+  </div>
+</div>
+
+<!-- 초대 링크 -->
+<div class="modal-backdrop" id="modalShareRoom">
+  <div class="modal-box">
+    <div class="modal-title">초대 링크 · 입장 코드</div>
+    <p class="modal-desc">링크나 입장 코드를 상대에게 전달하세요. 입장할 때 방 비밀번호가 필요합니다.</p>
+    <div class="form-group" style="margin-top:16px;">
+      <label>초대 링크</label>
+      <div class="copy-row">
+        <input type="text" class="field" id="shareUrlBox" readonly />
+        <button type="button" class="btn btn-ghost" data-copy="shareUrlBox">복사</button>
+      </div>
+    </div>
+    <div class="form-group">
+      <label>입장 코드</label>
+      <div class="copy-row">
+        <input type="text" class="field" id="shareCodeBox" readonly />
+        <button type="button" class="btn btn-ghost" data-copy="shareCodeBox">복사</button>
+      </div>
+    </div>
+    <div class="modal-foot">
+      <button type="button" class="btn btn-solid btn-close-modal">확인</button>
+    </div>
+  </div>
+</div>
+
+<script type="module">
+import { createClient } from 'https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/+esm';
+
+/* =========================================================
+   ▼▼▼ 여기 두 줄만 내 프로젝트 값으로 바꾸세요 ▼▼▼
+   ========================================================= */
+const SUPABASE_URL = 'https://miekutaopqqnfrlycrkd.supabase.co';
+const SUPABASE_KEY = 'sb_publishable_FyOuPSHSUKosjyhmwVM_-g_ZYjh4VZC';
+/* ▲▲▲ 공개 키(Publishable / anon)만 넣을 것. service_role·Secret 키는 절대 금지 ▲▲▲ */
+
+const DEFAULT_AUS = ['본편/기본', '현대 AU', '동양/무협 AU', '마피아/느와르 AU', '학원물 AU'];
+const MAX_LINKS = 5;
+const AVATAR_SIZE = 256;
+
+/* ---------- 공용 유틸 ---------- */
+const $ = id => document.getElementById(id);
+const esc = s => String(s ?? '').replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+const time = iso => Date.parse(iso) || 0;
+
+function normalizeUrl(value) {
+  let v = String(value || '').trim();
+  if (!v) return null;
+  if (!/^https?:\/\//i.test(v)) v = 'https://' + v;
+  try {
+    const u = new URL(v);
+    return (u.protocol === 'http:' || u.protocol === 'https:') && u.hostname.includes('.') ? u.href : null;
+  } catch { return null; }
+}
+
+/* 역극 입력 파서: "따옴표" → 대사 / (괄호)·따옴표 밖 → 지문 / 기호 없음 → 전체 대사 */
+function parseMessage(raw) {
+  const PAIRS = { '"': '"', '\u201C': '\u201D', '(': ')', '\uFF08': '\uFF09' };
+  const SPEECH_OPEN = new Set(['"', '\u201C']);
+  const text = String(raw || '').trim();
+  const segments = [];
+  let buf = '';
+  let marked = false;
+  const push = (kind, value) => {
+    const t = value.trim();
+    if (!t) return;
+    const last = segments[segments.length - 1];
+    if (kind === 'action' && last && last.kind === 'action') last.text += ' ' + t;
+    else segments.push({ kind, text: t });
+  };
+  for (let i = 0; i < text.length; i++) {
+    const ch = text[i];
+    const close = PAIRS[ch];
+    if (!close) { buf += ch; continue; }
+    let end = text.indexOf(close, i + 1);
+    if (end === -1) end = text.length;
+    push('action', buf);
+    buf = '';
+    push(SPEECH_OPEN.has(ch) ? 'speech' : 'action', text.slice(i + 1, end));
+    marked = true;
+    i = end;
+  }
+  if (!marked) return text ? [{ kind: 'speech', text }] : [];
+  push('action', buf);
+  return segments;
+}
+
+function parseDiceExpr(expr) {
+  const m = String(expr || '').replace(/\s+/g, '').toLowerCase().match(/^(\d{0,3})d(\d{1,4})([+-]\d{1,4})?$/);
+  if (!m) return null;
+  const n = m[1] ? parseInt(m[1], 10) : 1;
+  const sides = parseInt(m[2], 10);
+  const mod = m[3] ? parseInt(m[3], 10) : 0;
+  if (n < 1 || n > 100 || sides < 2 || sides > 1000 || Math.abs(mod) > 1000) return null;
+  return { n, sides, mod };
+}
+
+function resizeImage(file, size = AVATAR_SIZE) {
+  return new Promise((resolve, reject) => {
+    if (!file || !/^image\//.test(file.type)) return reject(new Error('이미지 파일만 올릴 수 있습니다.'));
+    if (file.size > 10 * 1024 * 1024) return reject(new Error('10MB 이하의 이미지만 올릴 수 있습니다.'));
+    const url = URL.createObjectURL(file);
+    const img = new Image();
+    img.onload = () => {
+      const s = Math.min(img.naturalWidth, img.naturalHeight);
+      const canvas = document.createElement('canvas');
+      canvas.width = canvas.height = size;
+      const ctx = canvas.getContext('2d');
+      ctx.imageSmoothingQuality = 'high';
+      ctx.drawImage(img, (img.naturalWidth - s) / 2, (img.naturalHeight - s) / 2, s, s, 0, 0, size, size);
+      URL.revokeObjectURL(url);
+      canvas.toBlob(b => b ? resolve(b) : reject(new Error('이미지를 처리하지 못했습니다.')), 'image/webp', 0.9);
+    };
+    img.onerror = () => { URL.revokeObjectURL(url); reject(new Error('이미지를 불러오지 못했습니다.')); };
+    img.src = url;
+  });
+}
+
+/* =========================================================
+   API 레이어 (Supabase)
+   ========================================================= */
+const configured = SUPABASE_URL.startsWith('https://') && !SUPABASE_KEY.startsWith('PASTE_');
+const sb = configured ? createClient(SUPABASE_URL, SUPABASE_KEY) : null;
+
+async function q(promise) {
+  const { data, error } = await promise;
+  if (error) throw new Error(error.message || '요청에 실패했습니다.');
+  return data;
+}
+
+async function fetchAll(makeQuery) {
+  const size = 1000;
+  const out = [];
+  for (let from = 0; ; from += size) {
+    const rows = await q(makeQuery().range(from, from + size - 1));
+    out.push(...rows);
+    if (rows.length < size) break;
+  }
+  return out;
+}
+
+const mapChar = c => ({
+  id: c.id, code: c.code, name: c.name, sub: c.sub, status: c.status, open: c.open,
+  tags: c.tags || [], desc: c.descr, avatar: c.avatar
+});
+
+const api = {
+  async ensureSession() {
+    const { data: { session } } = await sb.auth.getSession();
+    if (session) return session;
+    const { data, error } = await sb.auth.signInAnonymously();
+    if (error) throw new Error('접속을 준비하지 못했습니다. Supabase에서 익명 로그인(Allow anonymous sign-ins)이 켜져 있는지 확인해 주세요.');
+    return data.session;
+  },
+
+  async isHost() {
+    const { data, error } = await sb.rpc('is_host');
+    return !error && !!data;
+  },
+
+  async hostLogin(email, password) {
+    const { error } = await sb.auth.signInWithPassword({ email, password });
+    if (error) throw new Error('이메일 또는 비밀번호가 올바르지 않습니다.');
+  },
+
+  async logout() { await sb.auth.signOut(); },
+
+  async listCharacters() {
+    const rows = await q(sb.from('characters').select('*').order('sort').order('id'));
+    return rows.map(mapChar);
+  },
+
+  async listRooms() {
+    const rows = await q(sb.from('rooms')
+      .select('id, host_char_id, guest, created_at, threads(count), logs(count)')
+      .order('created_at', { ascending: false }));
+    return rows.map(r => ({
+      roomId: r.id,
+      hostCharId: r.host_char_id,
+      guestName: r.guest?.name || '',
+      threadCount: r.threads?.[0]?.count ?? 0,
+      logCount: r.logs?.[0]?.count ?? 0
+    }));
+  },
+
+  async getRoom(roomId) {
+    const [room, threads, replies, logs] = await Promise.all([
+      q(sb.from('rooms').select('*').eq('id', roomId).maybeSingle()),
+      fetchAll(() => sb.from('threads').select('*').eq('room_id', roomId).order('created_at').order('id')),
+      fetchAll(() => sb.from('replies').select('*').eq('room_id', roomId).order('created_at').order('id')),
+      fetchAll(() => sb.from('logs').select('*').eq('room_id', roomId).order('created_at').order('id'))
+    ]);
+    if (!room) throw new Error('방을 찾을 수 없거나 접근 권한이 없습니다.');
+
+    const byThread = {};
+    replies.forEach(r => {
+      (byThread[r.thread_id] ||= []).push({
+        id: r.id, authorRole: r.author_role, authorName: r.author_name, text: r.text, createdAt: r.created_at
+      });
+    });
+
+    return {
+      roomId: room.id,
+      hostCharId: room.host_char_id,
+      guest: { links: [], avatar: '', ...(room.guest || {}) },
+      status: { host: room.status_host || '', guest: room.status_guest || '' },
+      customAus: room.custom_aus || [],
+      threads: threads.map(t => ({
+        id: t.id, au: t.au, authorRole: t.author_role, authorName: t.author_name,
+        text: t.text, createdAt: t.created_at, replies: byThread[t.id] || []
+      })),
+      logs: logs.map(l => ({
+        id: l.id, kind: l.kind, role: l.role, speaker: l.speaker, status: l.status,
+        raw: l.raw, text: l.text, label: l.label, result: l.result, createdAt: l.created_at
+      }))
+    };
+  },
+
+  async createRoom({ hostCharId, guest, password }) {
+    const code = await q(sb.rpc('create_room', { p_host_char_id: hostCharId, p_guest: guest, p_password: password }));
+    return { roomId: code };
+  },
+
+  async joinRoom({ code, password }) {
+    const roomId = await q(sb.rpc('join_room', { p_code: code, p_password: password }));
+    if (!roomId) throw new Error('코드 또는 비밀번호가 일치하지 않습니다.');
+    return { roomId };
+  },
+
+  updateGuestProfile(roomId, guest) { return q(sb.rpc('update_guest_profile', { p_room: roomId, p_guest: guest })); },
+  updateStatus(roomId, text) { return q(sb.rpc('update_status', { p_room: roomId, p_text: text })); },
+  createThread(roomId, au, text) { return q(sb.rpc('create_thread', { p_room: roomId, p_au: au, p_text: text })); },
+  createReply(threadId, text) { return q(sb.rpc('create_reply', { p_thread: threadId, p_text: text })); },
+  createLog(roomId, kind, text) { return q(sb.rpc('create_log', { p_room: roomId, p_kind: kind, p_text: text })); },
+  rollDice(roomId, { label, expr, special }) {
+    return q(sb.rpc('roll_dice', { p_room: roomId, p_label: label || '', p_expr: expr || null, p_special: special || null }));
+  },
+  updateCharacterAvatar(charId, avatar) { return q(sb.rpc('update_character_avatar', { p_char: charId, p_avatar: avatar })); },
+
+  async uploadImage(blob) {
+    if (!state.userId) throw new Error('접속 정보를 확인할 수 없습니다. 새로고침해 주세요.');
+    const ext = blob.type === 'image/png' ? 'png' : blob.type === 'image/jpeg' ? 'jpg' : 'webp';
+    const path = `${state.userId}/${Date.now()}.${ext}`;
+    const { error } = await sb.storage.from('avatars').upload(path, blob, { contentType: blob.type, upsert: false, cacheControl: '31536000' });
+    if (error) throw new Error('인장 업로드에 실패했습니다. 2MB 이하 이미지인지 확인해 주세요.');
+    return sb.storage.from('avatars').getPublicUrl(path).data.publicUrl;
+  },
+
+  subscribeRoom(roomId, onChange) {
+    const ch = sb.channel(`room:${roomId}:${Date.now()}`);
+    ['threads', 'replies', 'logs'].forEach(table => {
+      ch.on('postgres_changes', { event: '*', schema: 'public', table, filter: `room_id=eq.${roomId}` }, onChange);
+    });
+    ch.on('postgres_changes', { event: 'UPDATE', schema: 'public', table: 'rooms', filter: `id=eq.${roomId}` }, onChange);
+    ch.subscribe();
+    return () => sb.removeChannel(ch);
+  },
+
+  subscribeAllRooms(onChange) {
+    const ch = sb.channel(`host-all:${Date.now()}`);
+    ['rooms', 'threads', 'logs'].forEach(table => {
+      ch.on('postgres_changes', { event: 'INSERT', schema: 'public', table }, onChange);
+    });
+    ch.subscribe();
+    return () => sb.removeChannel(ch);
+  }
+};
+
+/* =========================================================
+   UI 상태 & 렌더링
+   ========================================================= */
+const defaultFilter = () => ({ au: 'all', author: 'all', q: '', sort: 'new' });
+
+const state = {
+  isHost: false,
+  role: 'guest',
+  userId: null,
+  characters: [],
+  rooms: [],
+  room: null,
+  activeRoomId: null,
+  filter: defaultFilter(),
+  profileMode: 'create',
+  pendingCharId: null,
+  pfAvatar: '',
+  unsubscribeRoom: null,
+  unsubscribeAll: null,
+  busy: false,
+  forceScroll: false
+};
+
+const charById = id => state.characters.find(c => c.id === id);
+const hostChar = () => charById(state.room.hostCharId) || { name: '', sub: '', tags: [], avatar: '' };
+const roleName = role => role === 'host' ? hostChar().name : state.room.guest.name;
+const allAus = () => [...DEFAULT_AUS, ...(state.room?.customAus || [])];
+
+function avatar(url, name, size = 'sm') {
+  const initial = esc(String(name || '?').trim().charAt(0) || '?');
+  return url
+    ? `<span class="avatar ${size}"><img src="${esc(url)}" alt="" loading="lazy" /></span>`
+    : `<span class="avatar ${size}" aria-hidden="true">${initial}</span>`;
+}
+function avatarOf(role, size) {
+  if (role === 'host') { const c = hostChar(); return avatar(c.avatar, c.name, size); }
+  const g = state.room.guest;
+  return avatar(g.avatar, g.name, size);
+}
+
+const run = fn => async (...args) => {
+  if (state.busy) return;
+  state.busy = true;
+  try { await fn(...args); }
+  catch (e) { alert(e.message || '오류가 발생했습니다.'); }
+  finally { state.busy = false; }
+};
+
+/* ---------- 데이터 불러오기 ---------- */
+async function loadCharacters() {
+  state.characters = await api.listCharacters();
+}
+async function loadRooms() {
+  state.rooms = await api.listRooms();
+  renderSidebar();
+}
+async function loadRoom() {
+  const id = state.activeRoomId;
+  if (!id) return;
+  const room = await api.getRoom(id);
+  if (id !== state.activeRoomId) return;
+  state.room = room;
+  renderRoom();
+}
+async function refresh() {
+  await Promise.all([loadRoom(), state.isHost ? loadRooms() : null]);
+}
+
+let roomTimer = null;
+function scheduleRoomRefresh() {
+  clearTimeout(roomTimer);
+  roomTimer = setTimeout(() => { loadRoom().catch(e => console.warn(e)); }, 200);
+}
+let roomsTimer = null;
+function scheduleRoomsRefresh() {
+  clearTimeout(roomsTimer);
+  roomsTimer = setTimeout(() => { loadRooms().catch(e => console.warn(e)); }, 400);
+}
+
+/* ---------- 테마 ---------- */
+const THEME_LABEL = { system: '시스템', light: '라이트', dark: '다크' };
+const THEME_ORDER = ['system', 'light', 'dark'];
+function getTheme() {
+  try { const t = localStorage.getItem('puka_theme'); return THEME_ORDER.includes(t) ? t : 'system'; }
+  catch { return 'system'; }
+}
+function applyTheme(theme) {
+  if (theme === 'system') document.documentElement.removeAttribute('data-theme');
+  else document.documentElement.setAttribute('data-theme', theme);
+  try { localStorage.setItem('puka_theme', theme); } catch {}
+  $('btnTheme').textContent = `테마 · ${THEME_LABEL[theme]}`;
+}
+
+/* ---------- 역할 / 화면 전환 ---------- */
+function applyRoleUI() {
+  state.role = state.isHost ? 'host' : 'guest';
+  $('hostSidebar').classList.toggle('hidden', !state.isHost);
+  $('currentRoleText').textContent = state.isHost ? '호스트' : '방문자';
+  $('btnAuth').textContent = state.isHost ? '로그아웃' : '호스트 로그인';
+  $('btnBackLobby').hidden = state.isHost;
+  $('tokenBar').hidden = state.isHost;
+}
+
+function showView(id) {
+  document.querySelectorAll('.view-section').forEach(el => el.classList.remove('active'));
+  $(id).classList.add('active');
+}
+
+function switchTab(tab) {
+  $('tabBtnSseol').classList.toggle('active', tab === 'sseol');
+  $('tabBtnRp').classList.toggle('active', tab === 'rp');
+  $('panelSseol').classList.toggle('active', tab === 'sseol');
+  $('panelRp').classList.toggle('active', tab === 'rp');
+  if (tab === 'rp') { state.forceScroll = true; renderRp(); }
+}
+
+async function enterRoom(roomId) {
+  if (state.unsubscribeRoom) { state.unsubscribeRoom(); state.unsubscribeRoom = null; }
+  state.activeRoomId = roomId;
+  state.filter = defaultFilter();
+  $('filterQuery').value = '';
+  $('filterSort').value = 'new';
+  state.forceScroll = true;
+  try {
+    await loadRoom();
+  } catch (e) {
+    state.activeRoomId = null;
+    throw e;
+  }
+  showView('viewPairRoom');
+  renderSidebar();
+  history.replaceState(null, '', `${location.pathname}?room=${encodeURIComponent(roomId)}`);
+  state.unsubscribeRoom = api.subscribeRoom(roomId, scheduleRoomRefresh);
+}
+
+async function goLobby() {
+  if (state.unsubscribeRoom) { state.unsubscribeRoom(); state.unsubscribeRoom = null; }
+  state.activeRoomId = null;
+  state.room = null;
+  history.replaceState(null, '', location.pathname);
+  await loadRooms();
+  renderShowcase();
+  showView('viewShowcase');
+}
+
+/* ---------- 사이드바 (호스트) ---------- */
+function renderSidebar() {
+  if (!state.isHost) return;
+  const box = $('roomListContainer');
+  $('sidebarRoomCount').textContent = state.rooms.length;
+  box.innerHTML = '';
+  if (!state.rooms.length) {
+    box.innerHTML = '<div class="room-empty">아직 개설된 교류방이 없습니다.</div>';
+    return;
+  }
+  state.rooms.forEach(r => {
+    const c = charById(r.hostCharId);
+    const div = document.createElement('div');
+    div.className = 'room-item' + (r.roomId === state.activeRoomId ? ' active' : '');
+    div.innerHTML = `
+      <div class="room-code">${esc(r.roomId)}</div>
+      <div class="room-name">${esc(c?.name || '')} × ${esc(r.guestName)}</div>
+      <div class="room-meta">썰 ${r.threadCount} · 대화 ${r.logCount}</div>
+    `;
+    div.addEventListener('click', run(() => enterRoom(r.roomId)));
+    box.appendChild(div);
+  });
+}
+
+/* ---------- 쇼케이스 / 로비 ---------- */
+function renderShowcase() {
+  const mySec = $('myRoomsSection');
+  const myList = $('myRoomsList');
+  if (!state.isHost && state.rooms.length) {
+    mySec.hidden = false;
+    myList.innerHTML = '';
+    state.rooms.forEach(r => {
+      const c = charById(r.hostCharId);
+      const row = document.createElement('div');
+      row.className = 'my-room';
+      row.innerHTML = `
+        ${avatar(c?.avatar, c?.name, 'sm')}
+        <span class="my-room-name">${esc(c?.name || '')} × ${esc(r.guestName)}</span>
+        <span class="my-room-code">${esc(r.roomId)}</span>
+      `;
+      row.addEventListener('click', run(() => enterRoom(r.roomId)));
+      myList.appendChild(row);
+    });
+  } else {
+    mySec.hidden = true;
+  }
+
+  const grid = $('showcaseGrid');
+  grid.innerHTML = '';
+  state.characters.forEach(c => {
+    const card = document.createElement('div');
+    card.className = 'char-card';
+    card.innerHTML = `
+      <div class="card-top">
+        ${avatar(c.avatar, c.name, 'lg')}
+        <div class="card-top-right">
+          <span class="card-code">${esc(c.code)}</span>
+          <span class="card-status ${c.open ? '' : 'muted'}">${esc(c.status)}</span>
+        </div>
+      </div>
+      <div class="card-name">${esc(c.name)}<span class="card-sub">${esc(c.sub)}</span></div>
+      <div class="card-tags">${c.tags.map(t => `<span>${esc(t)}</span>`).join('')}</div>
+      <p class="card-desc">${esc(c.desc)}</p>
+      ${state.isHost
+        ? '<button type="button" class="btn btn-block" disabled>방문자 전용 버튼</button>'
+        : '<button type="button" class="btn btn-block">교류방 만들기</button>'}
+    `;
+    if (!state.isHost) card.querySelector('button').addEventListener('click', () => openProfileForm('create', c.id));
+    grid.appendChild(card);
+  });
+}
+
+/* ---------- 페어 룸 ---------- */
+function renderRoom() {
+  if (!state.room) return;
+  const room = state.room;
+  const hn = hostChar().name;
+  $('pairHeaderTitle').textContent = `${hn} × ${room.guest.name}`;
+  $('activePersonaBadge').textContent = state.isHost
+    ? `활성 페르소나 — ${hn}`
+    : `방문자로 접속 중 — ${room.guest.name}`;
+  $('sseolWriterAvatar').innerHTML = avatarOf(state.role, 'xs');
+  $('sseolWriterName').textContent = roleName(state.role);
+  renderAuSelect();
+  renderSseols();
+  renderRp();
+  if ($('modalProfileView').classList.contains('open')) renderProfileView();
+}
+
+function renderAuSelect() {
+  const sel = $('newSseolAu');
+  const prev = sel.value;
+  const customs = state.room.customAus;
+  sel.innerHTML = `
+    <optgroup label="기본">${DEFAULT_AUS.map(a => `<option value="${esc(a)}">${esc(a)}</option>`).join('')}</optgroup>
+    ${customs.length ? `<optgroup label="이 방의 AU">${customs.map(a => `<option value="${esc(a)}">${esc(a)}</option>`).join('')}</optgroup>` : ''}
+    <option value="__custom__">기타 (직접 입력)</option>
+  `;
+  sel.value = [...allAus(), '__custom__'].includes(prev) ? prev : DEFAULT_AUS[0];
+  $('newSseolAuCustom').hidden = sel.value !== '__custom__';
+}
+
+function renderSseols() {
+  const room = state.room;
+  const f = state.filter;
+  const threads = room.threads;
+
+  const counts = {};
+  threads.forEach(t => { counts[t.au] = (counts[t.au] || 0) + 1; });
+  const chipBox = $('auFilterChips');
+  chipBox.innerHTML = '';
+  [
+    { value: 'all', label: '전체', n: threads.length, custom: false },
+    ...DEFAULT_AUS.map(a => ({ value: a, label: a, n: counts[a] || 0, custom: false })),
+    ...room.customAus.map(a => ({ value: a, label: a, n: counts[a] || 0, custom: true }))
+  ].forEach(c => {
+    const b = document.createElement('button');
+    b.type = 'button';
+    b.className = 'chip' + (c.custom ? ' custom' : '') + (f.au === c.value ? ' active' : '');
+    b.innerHTML = `${esc(c.label)}<span class="chip-count">${c.n}</span>`;
+    b.addEventListener('click', () => { state.filter.au = c.value; renderSseols(); });
+    chipBox.appendChild(b);
+  });
+  if (f.au !== 'all' && !allAus().includes(f.au)) state.filter.au = 'all';
+
+  $('filterAuthor').innerHTML = `
+    <option value="all">작성자 전체</option>
+    <option value="host">${esc(hostChar().name)}</option>
+    <option value="guest">${esc(room.guest.name)}</option>
+  `;
+  $('filterAuthor').value = f.author;
+
+  const q = f.q.trim().toLowerCase();
+  const list = threads.filter(t => {
+    if (f.au !== 'all' && t.au !== f.au) return false;
+    if (f.author !== 'all' && t.authorRole !== f.author) return false;
+    if (q && ![t.text, ...t.replies.map(r => r.text)].join(' ').toLowerCase().includes(q)) return false;
+    return true;
+  });
+  if (f.sort === 'new') list.sort((a, b) => time(b.createdAt) - time(a.createdAt));
+  else if (f.sort === 'old') list.sort((a, b) => time(a.createdAt) - time(b.createdAt));
+  else list.sort((a, b) => b.replies.length - a.replies.length || time(b.createdAt) - time(a.createdAt));
+
+  $('filterCount').textContent = `${list.length} / ${threads.length}`;
+
+  // 실시간 갱신 시 작성 중인 답글 보존
+  const box = $('sseolThreadList');
+  const drafts = {};
+  let focusedId = null;
+  box.querySelectorAll('.reply-row input').forEach(inp => {
+    drafts[inp.dataset.thread] = inp.value;
+    if (document.activeElement === inp) focusedId = inp.dataset.thread;
+  });
+  box.innerHTML = '';
+
+  if (!threads.length) {
+    box.innerHTML = '<div class="empty-state">아직 작성된 썰이 없습니다.</div>';
+    return;
+  }
+  if (!list.length) {
+    box.innerHTML = '<div class="empty-state">조건에 맞는 썰이 없습니다.<br><button type="button" class="btn btn-ghost" id="btnResetFilter">필터 초기화</button></div>';
+    $('btnResetFilter').addEventListener('click', () => {
+      state.filter = defaultFilter();
+      $('filterQuery').value = '';
+      $('filterSort').value = 'new';
+      renderSseols();
+    });
+    return;
+  }
+
+  const writer = roleName(state.role);
+  list.forEach(t => {
+    const el = document.createElement('article');
+    el.className = 'thread';
+    el.innerHTML = `
+      <div class="thread-head">
+        <span class="thread-author">${avatarOf(t.authorRole, 'sm')}${esc(t.authorName)}</span>
+        <button type="button" class="au-label ${DEFAULT_AUS.includes(t.au) ? '' : 'custom'}">${esc(t.au)}</button>
+      </div>
+      <div class="thread-body">${esc(t.text)}</div>
+      ${t.replies.length ? `<div class="replies">${t.replies.map(r => `
+        <div class="reply">${avatarOf(r.authorRole, 'xs')}<div><strong>${esc(r.authorName)}</strong>${esc(r.text)}</div></div>
+      `).join('')}</div>` : ''}
+      <div class="reply-row">
+        <input type="text" class="field" placeholder="${esc(writer)}(으)로 이어 쓰기" />
+        <button type="button" class="btn btn-ghost">답글</button>
+      </div>
+    `;
+    el.querySelector('.au-label').addEventListener('click', () => { state.filter.au = t.au; renderSseols(); });
+    const input = el.querySelector('.reply-row input');
+    input.dataset.thread = t.id;
+    input.value = drafts[t.id] || '';
+    const submit = run(async () => {
+      const text = input.value.trim();
+      if (!text) return;
+      await api.createReply(t.id, text);
+      input.value = '';
+      await refresh();
+    });
+    el.querySelector('.reply-row button').addEventListener('click', submit);
+    input.addEventListener('keydown', e => { if (e.key === 'Enter' && !e.isComposing) submit(); });
+    box.appendChild(el);
+    if (focusedId === t.id) input.focus();
+  });
+}
+
+async function addThread() {
+  const text = $('newSseolText').value.trim();
+  const selected = $('newSseolAu').value;
+  const au = selected === '__custom__' ? $('newSseolAuCustom').value.trim() : selected;
+  $('composerError').textContent = '';
+  if (selected === '__custom__' && !au) { $('composerError').textContent = '새 AU 이름을 입력해 주세요.'; return; }
+  if (!text) { $('composerError').textContent = '내용을 입력해 주세요.'; return; }
+
+  await api.createThread(state.room.roomId, au, text);
+  $('newSseolText').value = '';
+  $('newSseolAuCustom').value = '';
+  await refresh();
+  $('newSseolAu').value = au;
+  $('newSseolAuCustom').hidden = true;
+}
+
+/* ---------- 역극 ---------- */
+function setStageStatus(el, value) {
+  el.textContent = value || '상태 미설정';
+  el.classList.toggle('is-empty', !value);
+}
+
+function renderRp() {
+  const room = state.room;
+  if (!room) return;
+  $('stageHostRole').textContent = state.isHost ? '호스트 · 나' : '호스트';
+  $('stageGuestRole').textContent = state.isHost ? '방문자' : '방문자 · 나';
+  $('stageHostAvatar').innerHTML = avatarOf('host', 'md');
+  $('stageGuestAvatar').innerHTML = avatarOf('guest', 'md');
+  $('stageHostName').textContent = hostChar().name;
+  $('stageGuestName').textContent = room.guest.name;
+  setStageStatus($('stageHostStatus'), room.status.host);
+  setStageStatus($('stageGuestStatus'), room.status.guest);
+  $('stageHost').classList.toggle('mine', state.isHost);
+  $('stageGuest').classList.toggle('mine', !state.isHost);
+  if (document.activeElement !== $('statusInput')) $('statusInput').value = room.status[state.role] || '';
+
+  const box = $('rpLogContainer');
+  const nearBottom = box.scrollHeight - box.scrollTop - box.clientHeight < 80;
+  box.innerHTML = '';
+  room.logs.forEach(log => {
+    const div = document.createElement('div');
+    if (log.kind === 'narration') {
+      div.className = 'rp-narration';
+      div.textContent = log.text;
+    } else if (log.kind === 'dice') {
+      div.className = 'rp-dice';
+      div.textContent = `[${log.speaker}${log.label ? ' · ' + log.label : ''}] ${log.result}`;
+    } else {
+      div.className = 'rp-row' + (log.role === state.role ? ' mine' : '');
+      div.innerHTML = `
+        ${avatarOf(log.role, 'sm')}
+        <div class="rp-post">
+          <div class="rp-meta">
+            <span class="rp-speaker">${esc(log.speaker)}</span>
+            ${log.status ? `<span class="rp-status">${esc(log.status)}</span>` : ''}
+          </div>
+          ${parseMessage(log.raw).map(s => s.kind === 'speech'
+            ? `<div class="rp-bubble">${esc(s.text)}</div>`
+            : `<div class="rp-action">${esc(s.text)}</div>`).join('')}
+        </div>
+      `;
+    }
+    box.appendChild(div);
+  });
+  if (nearBottom || state.forceScroll) box.scrollTop = box.scrollHeight;
+  state.forceScroll = false;
+}
+
+async function commitStatusIfChanged() {
+  const text = $('statusInput').value.trim();
+  if (text === (state.room.status[state.role] || '')) return;
+  await api.updateStatus(state.room.roomId, text);
+}
+
+async function sendRp() {
+  const input = $('rpInputText');
+  const raw = input.value.trim();
+  if (!raw) return;
+  await commitStatusIfChanged();
+  await api.createLog(state.room.roomId, $('rpInputMode').value === 'narration' ? 'narration' : 'post', raw);
+  input.value = '';
+  state.forceScroll = true;
+  await refresh();
+}
+
+async function rollDice(payload) {
+  await api.rollDice(state.room.roomId, { label: $('diceLabel').value, ...payload });
+  $('diceLabel').value = '';
+  state.forceScroll = true;
+  await refresh();
+}
+
+async function rollCustom() {
+  const expr = $('diceCustom').value;
+  if (!parseDiceExpr(expr)) {
+    $('diceError').textContent = '형식: NdM±K (최대 100개 · 1000면)';
+    return;
+  }
+  $('diceError').textContent = '';
+  $('diceCustom').value = '';
+  await rollDice({ expr });
+}
+
+function openNovelModal() {
+  const text = state.room.logs.map(log => {
+    if (log.kind === 'narration') return '\n' + log.text + '\n';
+    if (log.kind === 'dice') return `(${log.speaker}${log.label ? ' · ' + log.label : ''} — ${log.result})`;
+    return parseMessage(log.raw).map(s => s.kind === 'speech' ? `${log.speaker}  “${s.text}”` : s.text).join('\n');
+  }).join('\n').trim();
+  $('novelTextOutput').textContent = text;
+  $('modalNovelView').classList.add('open');
+}
+
+/* ---------- 프로필 작성 / 수정 ---------- */
+const PF_INPUTS = {
+  name: 'pfName', nameAlt: 'pfNameAlt', age: 'pfAge', gender: 'pfGender', affiliation: 'pfAffiliation',
+  world: 'pfWorld', personality: 'pfPersonality', intro: 'pfIntro', appearance: 'pfAppearance',
+  relation: 'pfRelation', ng: 'pfNg', owner: 'pfOwner'
+};
+
+function renderPfAvatar() {
+  $('pfAvatarPreview').innerHTML = avatar(state.pfAvatar, $('pfName').value || '?', 'xl');
+  $('btnRemoveAvatar').hidden = !state.pfAvatar;
+}
+
+function addLinkRow(value = '') {
+  const box = $('pfLinks');
+  if (box.children.length >= MAX_LINKS) return;
+  const row = document.createElement('div');
+  row.className = 'link-row';
+  row.innerHTML = `
+    <input type="url" class="field" placeholder="https://" />
+    <button type="button" class="btn btn-ghost btn-small">삭제</button>
+  `;
+  row.querySelector('input').value = value;
+  row.querySelector('button').addEventListener('click', () => {
+    row.remove();
+    if (!box.children.length) addLinkRow();
+    $('btnAddLink').disabled = box.children.length >= MAX_LINKS;
+  });
+  box.appendChild(row);
+  $('btnAddLink').disabled = box.children.length >= MAX_LINKS;
+}
+
+function openProfileForm(mode, charId) {
+  state.profileMode = mode;
+  state.pendingCharId = charId || null;
+  const g = mode === 'edit' ? state.room.guest : {};
+  Object.entries(PF_INPUTS).forEach(([key, id]) => { $(id).value = g[key] || ''; });
+  state.pfAvatar = g.avatar || '';
+  renderPfAvatar();
+  $('pfPassword').value = '';
+  $('pfLinks').innerHTML = '';
+  (g.links && g.links.length ? g.links : ['']).forEach(addLinkRow);
+  $('pfError').textContent = '';
+  $('pfAccessSection').hidden = mode === 'edit';
+  $('pfTitle').textContent = mode === 'edit' ? '방문자 프로필 수정' : `${charById(charId)?.name || ''} — 새 교류방`;
+  $('btnSubmitProfile').textContent = mode === 'edit' ? '저장' : '생성 후 입장';
+  closeModals();
+  $('modalProfileForm').classList.add('open');
+  $('pfName').focus();
+}
+
+function collectProfile() {
+  const profile = {};
+  Object.entries(PF_INPUTS).forEach(([key, id]) => { profile[key] = $(id).value.trim(); });
+  const links = [...$('pfLinks').querySelectorAll('input')].map(i => i.value.trim()).filter(Boolean).map(normalizeUrl);
+  if (!profile.name) return { error: '이름을 입력해 주세요.' };
+  if (links.some(l => !l)) return { error: '링크 형식을 확인해 주세요.' };
+  profile.links = links;
+  profile.avatar = state.pfAvatar;
+  return { profile };
+}
+
+async function submitProfile() {
+  const { profile, error } = collectProfile();
+  if (error) { $('pfError').textContent = error; return; }
+
+  if (state.profileMode === 'edit') {
+    await api.updateGuestProfile(state.room.roomId, profile);
+    closeModals();
+    await refresh();
+    return;
+  }
+
+  const password = $('pfPassword').value;
+  if (password.length < 4) { $('pfError').textContent = '비밀번호는 4자 이상으로 정해 주세요.'; return; }
+  const { roomId } = await api.createRoom({ hostCharId: state.pendingCharId, guest: profile, password });
+  closeModals();
+  await enterRoom(roomId);
+}
+
+async function uploadAvatarFile(file) {
+  const blob = await resizeImage(file);
+  return api.uploadImage(blob);
+}
+
+/* ---------- 프로필 보기 ---------- */
+const GUEST_VIEW_FIELDS = [
+  ['nameAlt', '다른 표기'], ['age', '나이'], ['gender', '성별'], ['affiliation', '소속 · 직업'],
+  ['world', '세계관 · 장르'], ['personality', '성격'], ['intro', '소개'], ['appearance', '외형'],
+  ['relation', '원하는 관계성'], ['ng', '지뢰 · NG'], ['owner', '오너']
+];
+
+function renderProfileView() {
+  const c = hostChar();
+  const g = state.room.guest;
+
+  const hostRows = [['상태', c.status], ['태그', (c.tags || []).join('  ')], ['소개', c.desc]]
+    .filter(([, v]) => v).map(([k, v]) => `<dt>${esc(k)}</dt><dd>${esc(v)}</dd>`);
+
+  $('pvHost').innerHTML = `
+    <div class="pv-head">
+      ${avatar(c.avatar, c.name, 'lg')}
+      <div>
+        <div class="pv-role">호스트 캐릭터${state.isHost ? ' · 나' : ''}</div>
+        <div class="pv-name">${esc(c.name)}<span class="card-sub">${esc(c.sub)}</span></div>
+      </div>
+    </div>
+    <dl class="profile-dl">${hostRows.join('')}</dl>
+    ${state.isHost ? `<div class="pv-actions">
+      <button type="button" class="btn btn-ghost btn-small" id="btnHostAvatar">인장 변경</button>
+      ${c.avatar ? '<button type="button" class="btn btn-ghost btn-small" id="btnHostAvatarRemove">인장 삭제</button>' : ''}
+    </div>` : ''}
+  `;
+
+  const guestRows = GUEST_VIEW_FIELDS.filter(([key]) => g[key]).map(([key, label]) => `<dt>${esc(label)}</dt><dd>${esc(g[key])}</dd>`);
+  if (g.links && g.links.length) {
+    guestRows.push(`<dt>링크</dt><dd>${g.links.map(l =>
+      `<a href="${esc(l)}" target="_blank" rel="noopener noreferrer">${esc(l.replace(/^https?:\/\//, ''))}</a>`).join('')}</dd>`);
+  }
+
+  $('pvGuest').innerHTML = `
+    <div class="pv-head">
+      ${avatar(g.avatar, g.name, 'lg')}
+      <div>
+        <div class="pv-role">방문자${state.isHost ? '' : ' · 나'}</div>
+        <div class="pv-name">${esc(g.name)}</div>
+      </div>
+    </div>
+    ${guestRows.length ? `<dl class="profile-dl">${guestRows.join('')}</dl>` : '<p class="pv-empty">등록된 정보가 없습니다.</p>'}
+    ${state.isHost ? '' : `<div class="pv-actions">
+      <button type="button" class="btn btn-ghost btn-small" id="btnEditProfile">프로필 수정</button>
+    </div>`}
+  `;
+
+  if (state.isHost) {
+    $('btnHostAvatar').addEventListener('click', () => $('hostAvatarFile').click());
+    const rm = $('btnHostAvatarRemove');
+    if (rm) rm.addEventListener('click', run(async () => {
+      await api.updateCharacterAvatar(state.room.hostCharId, '');
+      await loadCharacters();
+      renderRoom();
+      renderSidebar();
+    }));
+  } else {
+    $('btnEditProfile').addEventListener('click', () => openProfileForm('edit'));
+  }
+}
+
+function openProfileView() {
+  renderProfileView();
+  $('modalProfileView').classList.add('open');
+}
+
+/* ---------- 로그인 / 입장 / 공유 ---------- */
+async function hostLogin() {
+  $('loginError').textContent = '';
+  const email = $('loginEmail').value.trim();
+  const password = $('loginPassword').value;
+  if (!email || !password) { $('loginError').textContent = '이메일과 비밀번호를 입력해 주세요.'; return; }
+  try {
+    await api.hostLogin(email, password);
+    location.href = location.pathname;
+  } catch (e) {
+    $('loginError').textContent = e.message;
+  }
+}
+
+async function logout() {
+  await api.logout();
+  location.href = location.pathname;
+}
+
+async function enterByToken() {
+  const code = $('tokenInput').value.trim();
+  const password = $('tokenPassInput').value;
+  if (!code || !password) throw new Error('입장 코드와 비밀번호를 입력해 주세요.');
+  const { roomId } = await api.joinRoom({ code, password });
+  $('tokenPassInput').value = '';
+  await enterRoom(roomId);
+}
+
+function openShareModal() {
+  const code = state.room.roomId;
+  $('shareUrlBox').value = `${location.origin}${location.pathname}?room=${encodeURIComponent(code)}`;
+  $('shareCodeBox').value = code;
+  $('modalShareRoom').classList.add('open');
+}
+
+function copyText(text, btn) {
+  if (!navigator.clipboard) return;
+  navigator.clipboard.writeText(text).then(() => {
+    const original = btn.textContent;
+    btn.textContent = '복사됨';
+    setTimeout(() => { btn.textContent = original; }, 1200);
+  }).catch(() => {});
+}
+
+function closeModals() {
+  document.querySelectorAll('.modal-backdrop').forEach(m => m.classList.remove('open'));
+}
+
+/* ---------- 이벤트 바인딩 ---------- */
+const onEnter = (el, fn) => el.addEventListener('keydown', e => { if (e.key === 'Enter' && !e.isComposing) fn(); });
+
+$('btnTheme').addEventListener('click', () => {
+  applyTheme(THEME_ORDER[(THEME_ORDER.indexOf(getTheme()) + 1) % THEME_ORDER.length]);
+});
+$('btnAuth').addEventListener('click', () => {
+  if (state.isHost) run(logout)();
+  else { $('loginError').textContent = ''; $('modalLogin').classList.add('open'); $('loginEmail').focus(); }
+});
+$('btnLogin').addEventListener('click', run(hostLogin));
+onEnter($('loginPassword'), run(hostLogin));
+
+$('btnHostShowcase').addEventListener('click', run(goLobby));
+$('btnBackLobby').addEventListener('click', run(goLobby));
+$('tabBtnSseol').addEventListener('click', () => switchTab('sseol'));
+$('tabBtnRp').addEventListener('click', () => switchTab('rp'));
+$('btnOpenShare').addEventListener('click', openShareModal);
+$('btnOpenProfile').addEventListener('click', openProfileView);
+
+$('newSseolAu').addEventListener('change', e => {
+  const custom = e.target.value === '__custom__';
+  $('newSseolAuCustom').hidden = !custom;
+  if (custom) $('newSseolAuCustom').focus();
+});
+$('btnAddSseolThread').addEventListener('click', run(addThread));
+
+$('filterAuthor').addEventListener('change', e => { state.filter.author = e.target.value; renderSseols(); });
+$('filterQuery').addEventListener('input', e => { state.filter.q = e.target.value; renderSseols(); });
+$('filterSort').addEventListener('change', e => { state.filter.sort = e.target.value; renderSseols(); });
+
+const applyStatus = run(async () => { await commitStatusIfChanged(); $('statusInput').blur(); await refresh(); });
+$('btnApplyStatus').addEventListener('click', applyStatus);
+onEnter($('statusInput'), applyStatus);
+
+$('btnToggleDice').addEventListener('click', () => {
+  const open = $('dicePanel').classList.toggle('open');
+  $('btnToggleDice').classList.toggle('active', open);
+});
+document.querySelectorAll('[data-dice]').forEach(btn => {
+  btn.addEventListener('click', run(() => rollDice({ expr: btn.dataset.dice })));
+});
+document.querySelectorAll('[data-special]').forEach(btn => {
+  btn.addEventListener('click', run(() => rollDice({ special: btn.dataset.special })));
+});
+const customRoll = run(rollCustom);
+$('btnRollCustom').addEventListener('click', customRoll);
+onEnter($('diceCustom'), customRoll);
+
+const send = run(sendRp);
+$('btnSendRp').addEventListener('click', send);
+onEnter($('rpInputText'), send);
+$('btnOpenNovel').addEventListener('click', openNovelModal);
+$('btnCopyNovel').addEventListener('click', e => copyText($('novelTextOutput').textContent, e.currentTarget));
+
+$('btnPickAvatar').addEventListener('click', () => $('pfAvatarFile').click());
+$('btnRemoveAvatar').addEventListener('click', () => { state.pfAvatar = ''; renderPfAvatar(); });
+$('pfAvatarFile').addEventListener('change', run(async e => {
+  const file = e.target.files[0];
+  e.target.value = '';
+  if (!file) return;
+  state.pfAvatar = await uploadAvatarFile(file);
+  renderPfAvatar();
+}));
+$('pfName').addEventListener('input', () => { if (!state.pfAvatar) renderPfAvatar(); });
+
+$('hostAvatarFile').addEventListener('change', run(async e => {
+  const file = e.target.files[0];
+  e.target.value = '';
+  if (!file) return;
+  const url = await uploadAvatarFile(file);
+  await api.updateCharacterAvatar(state.room.hostCharId, url);
+  await loadCharacters();
+  renderRoom();
+  renderSidebar();
+}));
+
+$('btnAddLink').addEventListener('click', () => addLinkRow());
+$('btnSubmitProfile').addEventListener('click', run(submitProfile));
+
+const join = run(enterByToken);
+$('btnEnterByToken').addEventListener('click', join);
+onEnter($('tokenInput'), join);
+onEnter($('tokenPassInput'), join);
+
+document.querySelectorAll('[data-copy]').forEach(btn => {
+  btn.addEventListener('click', () => copyText($(btn.dataset.copy).value, btn));
+});
+document.querySelectorAll('.btn-close-modal').forEach(btn => btn.addEventListener('click', closeModals));
+document.querySelectorAll('.modal-backdrop').forEach(m => {
+  m.addEventListener('click', e => { if (e.target === m) closeModals(); });
+});
+document.addEventListener('keydown', e => { if (e.key === 'Escape') closeModals(); });
+
+/* ---------- 시작 ---------- */
+function showPageNotice(title, body) {
+  $('appBody').innerHTML = `<div class="page-notice"><strong>${esc(title)}</strong>${body}</div>`;
+}
+
+async function init() {
+  applyTheme(getTheme());
+
+  if (!configured) {
+    showPageNotice('연결 설정이 필요합니다',
+      'HTML 파일 안의 <code>SUPABASE_URL</code>과 <code>SUPABASE_KEY</code>에 내 프로젝트 값을 넣어 주세요.');
+    return;
+  }
+
+  try {
+    const session = await api.ensureSession();
+    state.userId = session.user.id;
+    state.isHost = await api.isHost();
+    await loadCharacters();
+    applyRoleUI();
+    await loadRooms();
+
+    const code = new URLSearchParams(location.search).get('room');
+    const known = code && state.rooms.some(r => r.roomId === code.toUpperCase());
+
+    if (known) {
+      await enterRoom(code.toUpperCase());
+    } else if (state.isHost && state.rooms.length) {
+      await enterRoom(state.rooms[0].roomId);
+    } else {
+      renderShowcase();
+      showView('viewShowcase');
+      if (code && !state.isHost) {
+        $('tokenInput').value = code.toUpperCase();
+        $('tokenPassInput').focus();
+      }
+    }
+
+    if (state.isHost) state.unsubscribeAll = api.subscribeAllRooms(scheduleRoomsRefresh);
+  } catch (e) {
+    showPageNotice('불러오는 중 문제가 생겼습니다', esc(e.message || '알 수 없는 오류'));
+  }
+}
+
+init();
+</script>
+</body>
+</html>
