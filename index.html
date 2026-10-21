@@ -2,7 +2,7 @@
 <html lang="ko">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, interactive-widget=resizes-content">
 <title>PUKA_OC</title>
 <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Cg fill='%23111'%3E%3Cellipse cx='4.8' cy='10.2' rx='2.1' ry='2.7'/%3E%3Cellipse cx='9.1' cy='5.6' rx='2.2' ry='2.9'/%3E%3Cellipse cx='14.9' cy='5.6' rx='2.2' ry='2.9'/%3E%3Cellipse cx='19.2' cy='10.2' rx='2.1' ry='2.7'/%3E%3Cpath d='M12 11.6c-3.2 0-6.2 3.3-6.2 6.1 0 2 1.5 3.1 3.3 3.1 1.2 0 2-.6 2.9-.6s1.7.6 2.9.6c1.8 0 3.3-1.1 3.3-3.1 0-2.8-3-6.1-6.2-6.1z'/%3E%3C/g%3E%3C/svg%3E">
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard/dist/web/static/pretendard.css">
@@ -12,6 +12,8 @@
       var t = localStorage.getItem('puka_theme');
       if (t === 'light' || t === 'dark') document.documentElement.setAttribute('data-theme', t);
     } catch (e) {}
+    var h = window.visualViewport ? window.visualViewport.height : window.innerHeight;
+    document.documentElement.style.setProperty('--app-h', Math.round(h) + 'px');
   })();
 </script>
 <style>
@@ -59,8 +61,10 @@
     font-family: 'Pretendard', -apple-system, BlinkMacSystemFont, 'Apple SD Gothic Neo', 'Segoe UI', sans-serif;
     background: var(--bg); color: var(--ink);
     font-size: 14px; line-height: 1.5; letter-spacing: -0.01em;
-    height: 100vh; display: flex; flex-direction: column; overflow: hidden;
+    height: 100vh; height: var(--app-h, 100vh);
+    display: flex; flex-direction: column; overflow: hidden;
     -webkit-font-smoothing: antialiased;
+    -webkit-text-size-adjust: 100%;
     transition: background .2s, color .2s;
   }
   button, input, select, textarea { font: inherit; color: inherit; letter-spacing: inherit; }
@@ -80,6 +84,9 @@
   .btn-ghost.active, .btn-ghost.active:hover:not(:disabled) { background: var(--ink); border-color: var(--ink); color: var(--on-ink); }
   .btn-small { padding: 6px 10px; font-size: 12.5px; }
   .btn-block { width: 100%; }
+
+  .text-btn { background: none; border: none; padding: 0; font-size: 12px; color: var(--ink-3); }
+  .text-btn:hover { color: var(--ink); text-decoration: underline; text-underline-offset: 3px; }
 
   .field {
     background: var(--bg); border: 1px solid var(--line); border-radius: 0;
@@ -117,18 +124,31 @@
   .avatar.lg { width: 64px; height: 64px; font-size: 20px; }
   .avatar.xl { width: 80px; height: 80px; font-size: 24px; }
 
+  /* 페이지 이동 */
+  .pager { display: flex; justify-content: center; align-items: center; gap: 4px; flex-wrap: wrap; }
+  .pager-nums { display: inline-flex; gap: 4px; align-items: center; }
+  .pager-btn { min-width: 32px; background: var(--bg); border: 1px solid var(--line); padding: 5px 9px; font-size: 12.5px; line-height: 1.2; transition: border-color .15s; }
+  .pager-btn:hover:not(:disabled) { border-color: var(--ink); }
+  .pager-btn.active { background: var(--ink); border-color: var(--ink); color: var(--on-ink); }
+  .pager-gap { color: var(--ink-4); padding: 0 4px; font-size: 12px; }
+  .pager-compact { display: none; font-family: var(--mono); font-size: 12px; color: var(--ink-2); padding: 0 10px; }
+  .pager-edge.mobile-only { display: none; }
+
   header {
     height: 52px; flex-shrink: 0; display: flex; align-items: center; justify-content: space-between;
     padding: 0 20px; border-bottom: 1px solid var(--ink);
   }
+  .header-left { display: flex; align-items: center; gap: 12px; }
   .brand { display: flex; align-items: center; color: var(--ink); }
   .header-right { display: flex; align-items: center; gap: 8px; }
   .role-text { font-size: 12.5px; color: var(--ink-3); margin-right: 4px; }
+  .sidebar-toggle { display: none; }
 
-  .app-body { flex: 1; display: flex; overflow: hidden; }
+  .app-body { flex: 1; display: flex; overflow: hidden; min-height: 0; }
 
   .sidebar { width: 260px; flex-shrink: 0; border-right: 1px solid var(--line); display: flex; flex-direction: column; }
   .sidebar.hidden { display: none; }
+  .sidebar-scrim { display: none; }
   .sidebar-head { padding: 20px 18px 14px; border-bottom: 1px solid var(--line); }
   .eyebrow { font-size: 11px; letter-spacing: .08em; text-transform: uppercase; color: var(--ink-3); display: flex; justify-content: space-between; }
   .sidebar-note { font-size: 12px; color: var(--ink-3); margin: 8px 0 12px; line-height: 1.55; }
@@ -142,8 +162,8 @@
   .room-meta { font-size: 12px; color: var(--ink-3); }
   .room-item.active .room-code, .room-item.active .room-meta { color: var(--on-ink-sub); }
 
-  .main-stage { flex: 1; display: flex; flex-direction: column; overflow: hidden; }
-  .view-section { display: none; flex: 1; flex-direction: column; overflow: hidden; }
+  .main-stage { flex: 1; display: flex; flex-direction: column; overflow: hidden; min-width: 0; }
+  .view-section { display: none; flex: 1; flex-direction: column; overflow: hidden; min-height: 0; }
   .view-section.active { display: flex; }
 
   #viewShowcase { overflow-y: auto; }
@@ -160,8 +180,8 @@
   .my-room-list { border-top: 1px solid var(--line); }
   .my-room { display: flex; align-items: center; gap: 12px; padding: 12px 4px; border-bottom: 1px solid var(--line); cursor: pointer; transition: background .15s; }
   .my-room:hover { background: var(--bg-sub); }
-  .my-room-name { font-weight: 600; font-size: 14px; }
-  .my-room-code { font-family: var(--mono); font-size: 11.5px; color: var(--ink-3); margin-left: auto; }
+  .my-room-name { font-weight: 600; font-size: 14px; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .my-room-code { font-family: var(--mono); font-size: 11.5px; color: var(--ink-3); margin-left: auto; flex-shrink: 0; }
 
   .char-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(230px, 1fr)); border-top: 1px solid var(--line); border-left: 1px solid var(--line); }
   .char-card { border: none; border-right: 1px solid var(--line); border-bottom: 1px solid var(--line); background: var(--bg); padding: 22px; display: flex; flex-direction: column; text-align: left; transition: background .15s; }
@@ -188,9 +208,10 @@
   .room-sub { font-size: 12px; color: var(--ink-3); margin-top: 2px; }
   .room-actions { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; }
 
-  .sub-panel { display: none; flex: 1; overflow: hidden; }
+  .sub-panel { display: none; flex: 1; overflow: hidden; min-height: 0; }
   .sub-panel.active { display: flex; }
 
+  /* 썰풀이 */
   .sseol-scroll { flex: 1; overflow-y: auto; }
   .sseol-feed { max-width: 760px; margin: 0 auto; padding: 28px 24px 64px; }
   .composer { border: 1px solid var(--ink); padding: 16px; }
@@ -203,59 +224,113 @@
   .composer-bottom { display: flex; justify-content: space-between; align-items: center; margin-top: 10px; gap: 8px; }
   .composer-error { font-size: 12px; color: var(--ink-2); }
 
-  .filter-bar { margin-top: 36px; padding-bottom: 14px; border-bottom: 1px solid var(--ink); display: flex; flex-direction: column; gap: 10px; }
+  .filter-bar { margin-top: 36px; padding-bottom: 14px; border-bottom: 1px solid var(--ink); display: flex; flex-direction: column; gap: 10px; scroll-margin-top: 12px; }
   .filter-row { display: flex; flex-wrap: wrap; gap: 6px; align-items: center; }
   .filter-row .field { padding: 7px 10px; font-size: 13px; }
   .filter-row select.field { padding-right: 30px; }
   #filterQuery { flex: 1; min-width: 160px; }
   .filter-count { margin-left: auto; font-family: var(--mono); font-size: 12px; color: var(--ink-3); }
 
-  .thread { padding: 22px 0; border-bottom: 1px solid var(--line); }
+  .thread { padding: 22px 0; border-bottom: 1px solid var(--line); scroll-margin-top: 12px; }
   .thread-head { display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px; gap: 10px; }
-  .thread-author { display: flex; align-items: center; gap: 10px; font-size: 13.5px; font-weight: 600; }
+  .thread-author { display: flex; align-items: center; gap: 10px; font-size: 13.5px; font-weight: 600; min-width: 0; }
+  .thread-head-right { display: flex; align-items: center; gap: 10px; flex-shrink: 0; }
   .au-label { background: none; border: 1px solid var(--line); padding: 2px 8px; font-size: 11.5px; color: var(--ink-2); }
   .au-label.custom { border-style: dashed; }
   .au-label:hover { border-color: var(--ink); color: var(--ink); }
   .thread-body { font-size: 14.5px; line-height: 1.75; white-space: pre-line; word-break: break-word; }
-  .replies { margin-top: 14px; padding-left: 14px; border-left: 1px solid var(--ink); display: flex; flex-direction: column; gap: 10px; }
+  .thread-body.clamped { display: -webkit-box; -webkit-line-clamp: 8; -webkit-box-orient: vertical; overflow: hidden; }
+  .body-toggle { margin-top: 8px; }
+
+  .reply-toggle {
+    width: 100%; display: flex; justify-content: space-between; align-items: center; gap: 12px;
+    margin-top: 16px; padding: 10px 0 0; background: none; border: none; border-top: 1px solid var(--line);
+    font-size: 12.5px; color: var(--ink-2); text-align: left;
+  }
+  .reply-toggle-info { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .reply-toggle-act { flex-shrink: 0; color: var(--ink-3); }
+  .reply-toggle:hover .reply-toggle-act { color: var(--ink); text-decoration: underline; text-underline-offset: 3px; }
+  .reply-toggle[aria-expanded="true"] .reply-toggle-act { color: var(--ink); }
+
+  .reply-panel { margin-top: 12px; }
+  .replies { padding-left: 14px; border-left: 1px solid var(--ink); display: flex; flex-direction: column; gap: 10px; }
+  .replies-more { align-self: flex-start; }
   .reply { display: flex; gap: 8px; align-items: flex-start; font-size: 13.5px; line-height: 1.65; color: var(--ink-2); word-break: break-word; }
+  .reply-main { flex: 1; min-width: 0; white-space: pre-line; }
   .reply strong { color: var(--ink); font-weight: 600; margin-right: 6px; }
-  .reply-row { display: flex; gap: 6px; margin-top: 12px; }
-  .reply-row .field { flex: 1; padding: 7px 10px; font-size: 13px; }
+  .reply-row { display: flex; gap: 6px; margin-top: 12px; scroll-margin-bottom: 16px; }
+  .reply-row .field { flex: 1; padding: 7px 10px; font-size: 13px; min-width: 0; }
+  #sseolPager { margin-top: 22px; }
   .empty-state { padding: 56px 0; text-align: center; color: var(--ink-3); font-size: 13px; }
   .empty-state .btn { margin-top: 14px; }
 
-  .rp { display: flex; flex-direction: column; width: 100%; height: 100%; }
+  /* 수정 · 삭제 */
+  .tools { display: inline-flex; gap: 10px; margin-left: 8px; white-space: nowrap; vertical-align: baseline; }
+  .tools button { background: none; border: none; padding: 0; color: var(--ink-3); font-size: 11.5px; font-weight: 400; }
+  .tools button:hover { color: var(--ink); text-decoration: underline; text-underline-offset: 3px; }
+  .edited { font-size: 11px; font-weight: 400; color: var(--ink-4); margin-left: 6px; white-space: nowrap; }
+  .thread-head .tools, .rp-meta .tools, .rp-meta .edited, .rp-sub .tools, .rp-sub .edited, .rp-dice-row .tools { margin-left: 0; }
+  @media (hover: hover) {
+    .owned .tools { opacity: 0; transition: opacity .15s; }
+    .owned:hover .tools, .owned:focus-within .tools { opacity: 1; }
+  }
+  @media (hover: none) {
+    .owned .tools { display: none; }
+    .owned.tools-open .tools { display: inline-flex; }
+    .tools { gap: 14px; }
+    .tools button { font-size: 12.5px; padding: 2px 0; }
+  }
+  .edit-box { display: flex; flex-direction: column; gap: 6px; width: 100%; }
+  .edit-box .field { width: 100%; font-size: 13.5px; font-family: inherit; }
+  .edit-actions { display: flex; justify-content: flex-end; gap: 6px; }
+
+  /* 역극 */
+  .rp { display: flex; flex-direction: column; width: 100%; height: 100%; min-height: 0; }
+  .rp-channels { display: flex; align-items: center; gap: 10px; padding: 10px 24px; border-bottom: 1px solid var(--line); flex-shrink: 0; }
+  .channel-tabs { flex: 1; display: flex; gap: 6px; overflow-x: auto; min-width: 0; scrollbar-width: none; }
+  .channel-tabs::-webkit-scrollbar { display: none; }
+  .channel-tabs .chip { flex-shrink: 0; white-space: nowrap; }
+  #channelSelect { display: none; flex: 1; min-width: 0; padding-top: 7px; padding-bottom: 7px; }
+  .channel-actions { display: flex; gap: 6px; flex-shrink: 0; }
+
   .rp-stage { display: flex; border-bottom: 1px solid var(--line); flex-shrink: 0; }
   .stage-box { flex: 1; display: flex; align-items: center; gap: 12px; padding: 14px 24px; border-right: 1px solid var(--line); position: relative; min-width: 0; }
+  .stage-box:last-child { border-right: none; }
   .stage-box.mine::before { content: ''; position: absolute; left: 0; top: 0; bottom: 0; width: 2px; background: var(--ink); }
   .stage-info { min-width: 0; }
   .stage-role { font-size: 11px; letter-spacing: .06em; color: var(--ink-3); }
-  .stage-name { font-size: 15px; font-weight: 600; margin: 2px 0 3px; }
-  .stage-status { font-size: 12.5px; color: var(--ink-2); line-height: 1.5; }
+  .stage-name { font-size: 15px; font-weight: 600; margin: 2px 0 3px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .stage-status { font-size: 12.5px; color: var(--ink-2); line-height: 1.5; word-break: break-word; }
   .stage-status.is-empty { color: var(--ink-4); }
-  .stage-actions { display: flex; align-items: center; padding: 0 20px; }
 
-  .rp-log { flex: 1; overflow-y: auto; padding: 28px; display: flex; flex-direction: column; gap: 18px; }
-  .rp-narration { align-self: center; max-width: 580px; text-align: center; font-family: var(--serif); font-size: 14px; line-height: 1.85; color: var(--ink-2); white-space: pre-wrap; word-break: break-word; }
-  .rp-dice { align-self: center; font-family: var(--mono); font-size: 12px; color: var(--ink-2); border: 1px solid var(--line); padding: 5px 12px; }
+  .rp-pager { flex-shrink: 0; padding: 8px 24px; border-bottom: 1px solid var(--line); }
+
+  .rp-log { flex: 1; overflow-y: auto; padding: 28px; display: flex; flex-direction: column; gap: 18px; min-height: 0; }
+  .rp-narr { align-self: center; max-width: 580px; display: flex; flex-direction: column; align-items: center; gap: 4px; }
+  .rp-narr.is-editing { width: 100%; }
+  .rp-narration { text-align: center; font-family: var(--serif); font-size: 14px; line-height: 1.85; color: var(--ink-2); white-space: pre-wrap; word-break: break-word; }
+  .rp-sub { display: flex; align-items: center; justify-content: center; gap: 8px; }
+  .rp-dice-row { align-self: center; display: flex; align-items: center; gap: 8px; max-width: 100%; }
+  .rp-dice { font-family: var(--mono); font-size: 12px; color: var(--ink-2); border: 1px solid var(--line); padding: 5px 12px; word-break: break-word; }
   .rp-row { display: flex; gap: 10px; align-items: flex-start; max-width: 72%; }
   .rp-row.mine { align-self: flex-end; flex-direction: row-reverse; }
+  .rp-row.is-editing { width: min(100%, 640px); max-width: 100%; }
   .rp-post { display: flex; flex-direction: column; align-items: flex-start; gap: 6px; min-width: 0; }
   .rp-row.mine .rp-post { align-items: flex-end; }
-  .rp-meta { display: flex; gap: 8px; align-items: baseline; font-size: 12px; }
+  .rp-row.is-editing .rp-post, .rp-row.mine.is-editing .rp-post { flex: 1; align-items: stretch; }
+  .rp-meta { display: flex; flex-wrap: wrap; gap: 8px; align-items: baseline; font-size: 12px; }
   .rp-speaker { font-weight: 600; }
   .rp-status { color: var(--ink-3); }
   .rp-bubble { border: 1px solid var(--line); padding: 10px 14px; font-size: 14px; line-height: 1.65; white-space: pre-wrap; word-break: break-word; }
   .rp-row.mine .rp-bubble { background: var(--ink); border-color: var(--ink); color: var(--on-ink); }
-  .rp-action { font-family: var(--serif); font-size: 13.5px; line-height: 1.75; color: var(--ink-2); padding: 0 2px; word-break: break-word; }
+  .rp-action { font-family: var(--serif); font-size: 13.5px; line-height: 1.75; color: var(--ink-2); padding: 0 2px; word-break: break-word; white-space: pre-wrap; }
   .rp-row.mine .rp-action { text-align: right; }
 
   .rp-input { border-top: 1px solid var(--ink); padding: 14px 20px 12px; display: flex; flex-direction: column; gap: 8px; flex-shrink: 0; }
   .status-row, .input-row { display: flex; gap: 6px; align-items: center; }
   .row-label { font-size: 12px; color: var(--ink-3); width: 64px; flex-shrink: 0; }
-  .status-row .field { flex: 1; padding: 7px 10px; font-size: 13px; }
-  .input-row .field { flex: 1; }
+  .status-row .field { flex: 1; padding: 7px 10px; font-size: 13px; min-width: 0; }
+  .input-row .field { flex: 1; min-width: 0; }
   .input-row select.field { flex: 0 0 auto; }
   .input-hint { font-size: 11.5px; color: var(--ink-4); line-height: 1.6; }
   .input-hint code { font-family: var(--mono); color: var(--ink-3); }
@@ -264,13 +339,13 @@
   .dice-panel.open { display: flex; }
   .dice-group { display: flex; flex-wrap: wrap; gap: 6px; align-items: center; }
   .dice-group .field { padding: 6px 10px; font-size: 12.5px; }
-  #diceLabel { flex: 1; }
+  #diceLabel { flex: 1; min-width: 0; }
   #diceCustom { width: 130px; font-family: var(--mono); }
   .dice-error { font-size: 11.5px; color: var(--ink-3); }
 
   .modal-backdrop { position: fixed; inset: 0; background: var(--backdrop); display: none; align-items: center; justify-content: center; padding: 20px; z-index: 100; }
   .modal-backdrop.open { display: flex; }
-  .modal-box { background: var(--bg); border: 1px solid var(--ink); width: 100%; max-width: 460px; max-height: calc(100vh - 40px); overflow-y: auto; padding: 26px; }
+  .modal-box { background: var(--bg); border: 1px solid var(--ink); width: 100%; max-width: 460px; max-height: calc(var(--app-h, 100vh) - 40px); overflow-y: auto; padding: 26px; }
   .modal-box.wide { max-width: 640px; }
   .modal-box.xwide { max-width: 780px; }
   .modal-box.form { max-width: 560px; }
@@ -286,10 +361,11 @@
   .check-row { display: flex; align-items: center; gap: 8px; font-size: 13px; margin-bottom: 14px; cursor: pointer; }
   .check-row input { accent-color: var(--ink); width: 16px; height: 16px; }
   .link-row { display: flex; gap: 6px; margin-bottom: 6px; }
-  .link-row .field { flex: 1; font-family: var(--mono); font-size: 12.5px; }
+  .link-row .field { flex: 1; font-family: var(--mono); font-size: 12.5px; min-width: 0; }
   .copy-row { display: flex; gap: 6px; }
-  .copy-row .field { flex: 1; font-family: var(--mono); font-size: 12.5px; }
+  .copy-row .field { flex: 1; font-family: var(--mono); font-size: 12.5px; min-width: 0; }
   .modal-foot { display: flex; justify-content: flex-end; gap: 6px; margin-top: 20px; }
+  .modal-foot .foot-left { margin-right: auto; }
 
   .avatar-field { display: flex; gap: 16px; align-items: center; }
   .avatar-actions { display: flex; flex-direction: column; gap: 6px; align-items: flex-start; }
@@ -306,7 +382,7 @@
   .profile-dl { display: grid; grid-template-columns: 84px 1fr; gap: 9px 12px; font-size: 13px; margin-top: 18px; }
   .profile-dl dt { color: var(--ink-3); font-size: 12px; padding-top: 1px; }
   .profile-dl dd { line-height: 1.6; white-space: pre-line; word-break: break-word; }
-  .profile-dl a { color: var(--ink); text-underline-offset: 3px; font-family: var(--mono); font-size: 12px; display: block; }
+  .profile-dl a { color: var(--ink); text-underline-offset: 3px; font-family: var(--mono); font-size: 12px; display: block; word-break: break-all; }
   .pv-empty { font-size: 12.5px; color: var(--ink-3); margin-top: 18px; }
   @media (max-width: 680px) {
     .profile-cols { grid-template-columns: 1fr; }
@@ -318,19 +394,115 @@
   .page-notice { margin: auto; max-width: 480px; padding: 32px; border: 1px solid var(--ink); font-size: 13.5px; line-height: 1.7; }
   .page-notice strong { display: block; font-size: 15px; margin-bottom: 8px; }
   .page-notice code { font-family: var(--mono); font-size: 12.5px; }
+
+  /* ---------- 모바일 ---------- */
+  @media (max-width: 820px) {
+    header { padding: 0 12px; }
+    .header-left { gap: 10px; }
+    .header-right { gap: 6px; }
+    .role-text { display: none; }
+    .sidebar-toggle { display: inline-block; }
+
+    .sidebar {
+      position: fixed; top: 52px; bottom: 0; left: 0; z-index: 60;
+      width: min(300px, 86vw); background: var(--bg); border-right: 1px solid var(--ink);
+      transform: translateX(-100%); transition: transform .2s;
+    }
+    .sidebar.open { transform: none; }
+    .sidebar-scrim.open { display: block; position: fixed; top: 52px; left: 0; right: 0; bottom: 0; background: var(--backdrop); z-index: 50; }
+
+    input.field, select.field, textarea.field { font-size: 16px !important; }
+
+    .pager-nums { display: none; }
+    .pager-compact { display: inline; }
+    .pager-edge.mobile-only { display: inline-block; }
+    .pager-btn { padding: 7px 12px; }
+
+    .lobby { padding: 28px 16px 48px; }
+    .lobby-head { margin-bottom: 28px; padding-bottom: 24px; }
+    .lobby-head h1 { font-size: 21px; }
+    .lobby-head p { font-size: 13.5px; }
+    .token-bar { flex-wrap: wrap; }
+    .token-bar #tokenInput { flex: 1 1 100%; }
+    .token-bar #tokenPassInput { flex: 1; width: auto; min-width: 0; }
+    .my-rooms { margin-bottom: 28px; }
+    .char-card { padding: 18px; }
+
+    .room-head { flex-direction: column; align-items: stretch; gap: 8px; padding: 10px 12px; }
+    .room-title { font-size: 15px; }
+    .room-sub { display: none; }
+    .room-actions { flex-wrap: nowrap; overflow-x: auto; gap: 6px; scrollbar-width: none; }
+    .room-actions::-webkit-scrollbar { display: none; }
+    .room-actions .btn { padding: 7px 10px; font-size: 12.5px; flex-shrink: 0; }
+    .room-actions .seg { flex-shrink: 0; }
+    .seg button { padding: 7px 14px; }
+
+    .sseol-feed { padding: 16px 12px 48px; }
+    .composer { padding: 12px; }
+    #newSseolAuCustom { max-width: none; min-width: 0; }
+    .filter-bar { margin-top: 24px; }
+    #auFilterChips { flex-wrap: nowrap; overflow-x: auto; scrollbar-width: none; }
+    #auFilterChips::-webkit-scrollbar { display: none; }
+    #auFilterChips .chip { flex-shrink: 0; white-space: nowrap; }
+    #filterQuery { flex: 1 1 100%; order: -1; }
+    .thread { padding: 18px 0; }
+    .thread-body { font-size: 14px; }
+    .reply-toggle { padding-top: 12px; font-size: 13px; }
+
+    .rp-channels { padding: 8px 12px; gap: 6px; }
+    .channel-tabs { display: none; }
+    #channelSelect { display: block; }
+    .channel-actions { gap: 4px; }
+    .channel-actions .btn { padding: 7px 9px; }
+    .stage-box { padding: 10px 12px; gap: 8px; }
+    .stage-box .avatar.md { width: 32px; height: 32px; font-size: 12px; }
+    .stage-role { font-size: 10.5px; }
+    .stage-name { font-size: 13.5px; margin: 1px 0 2px; }
+    .stage-status { font-size: 12px; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
+    .rp-pager { padding: 6px 12px; }
+    .rp-log { padding: 16px 12px; gap: 14px; }
+    .rp-row { max-width: 90%; }
+    .rp-narration { font-size: 13.5px; }
+    .rp-input { padding: 10px 12px calc(10px + env(safe-area-inset-bottom)); }
+    .row-label { width: 56px; }
+    .input-row { flex-wrap: wrap; }
+    #rpInputText { order: -1; flex: 1 1 100%; }
+    #btnSendRp { margin-left: auto; }
+    .input-hint { font-size: 11px; }
+    #diceCustom { width: 110px; }
+
+    body.rp-typing header,
+    body.rp-typing .room-head,
+    body.rp-typing .rp-channels,
+    body.rp-typing .rp-stage,
+    body.rp-typing .rp-pager,
+    body.rp-typing .input-hint { display: none !important; }
+
+    .modal-backdrop { padding: 12px; }
+    .modal-box { padding: 20px 18px; max-height: calc(var(--app-h, 100vh) - 24px); }
+    .novel-paper { padding: 16px; max-height: 55vh; }
+    .page-notice { margin: 16px; padding: 24px; }
+  }
+  @media (max-width: 560px) {
+    .form-grid { grid-template-columns: 1fr; }
+    .profile-dl { grid-template-columns: 72px 1fr; }
+  }
 </style>
 </head>
 <body>
 
 <header>
-  <div class="brand" aria-label="PUKA_OC">
-    <svg width="22" height="22" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
-      <ellipse cx="4.8" cy="10.2" rx="2.1" ry="2.7" transform="rotate(-22 4.8 10.2)"/>
-      <ellipse cx="9.1" cy="5.6" rx="2.2" ry="2.9" transform="rotate(-8 9.1 5.6)"/>
-      <ellipse cx="14.9" cy="5.6" rx="2.2" ry="2.9" transform="rotate(8 14.9 5.6)"/>
-      <ellipse cx="19.2" cy="10.2" rx="2.1" ry="2.7" transform="rotate(22 19.2 10.2)"/>
-      <path d="M12 11.6c-3.2 0-6.2 3.3-6.2 6.1 0 2 1.5 3.1 3.3 3.1 1.2 0 2-.6 2.9-.6s1.7.6 2.9.6c1.8 0 3.3-1.1 3.3-3.1 0-2.8-3-6.1-6.2-6.1z"/>
-    </svg>
+  <div class="header-left">
+    <div class="brand" aria-label="PUKA_OC">
+      <svg width="22" height="22" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
+        <ellipse cx="4.8" cy="10.2" rx="2.1" ry="2.7" transform="rotate(-22 4.8 10.2)"/>
+        <ellipse cx="9.1" cy="5.6" rx="2.2" ry="2.9" transform="rotate(-8 9.1 5.6)"/>
+        <ellipse cx="14.9" cy="5.6" rx="2.2" ry="2.9" transform="rotate(8 14.9 5.6)"/>
+        <ellipse cx="19.2" cy="10.2" rx="2.1" ry="2.7" transform="rotate(22 19.2 10.2)"/>
+        <path d="M12 11.6c-3.2 0-6.2 3.3-6.2 6.1 0 2 1.5 3.1 3.3 3.1 1.2 0 2-.6 2.9-.6s1.7.6 2.9.6c1.8 0 3.3-1.1 3.3-3.1 0-2.8-3-6.1-6.2-6.1z"/>
+      </svg>
+    </div>
+    <button type="button" class="btn btn-ghost btn-small sidebar-toggle" id="btnSidebar" hidden>목록</button>
   </div>
   <div class="header-right">
     <span class="role-text" id="currentRoleText"></span>
@@ -348,6 +520,7 @@
     </div>
     <div class="room-list" id="roomListContainer"></div>
   </aside>
+  <div class="sidebar-scrim" id="sidebarScrim"></div>
 
   <main class="main-stage">
 
@@ -411,7 +584,7 @@
               </div>
             </div>
 
-            <div class="filter-bar">
+            <div class="filter-bar" id="filterBar">
               <div class="filter-row" id="auFilterChips"></div>
               <div class="filter-row">
                 <select class="field" id="filterAuthor"></select>
@@ -426,6 +599,7 @@
             </div>
 
             <div id="sseolThreadList"></div>
+            <div class="pager" id="sseolPager" hidden></div>
           </div>
         </div>
       </div>
@@ -433,6 +607,16 @@
       <!-- 역극 -->
       <div class="sub-panel" id="panelRp">
         <div class="rp">
+          <div class="rp-channels">
+            <div class="channel-tabs" id="channelTabs"></div>
+            <select class="field" id="channelSelect" aria-label="채팅방"></select>
+            <div class="channel-actions">
+              <button type="button" class="btn btn-ghost btn-small" id="btnChannelSettings" title="채팅방 설정">설정</button>
+              <button type="button" class="btn btn-ghost btn-small" id="btnNewChannel">+ 새 채팅방</button>
+              <button type="button" class="btn btn-ghost btn-small" id="btnOpenNovel">소설 뷰</button>
+            </div>
+          </div>
+
           <div class="rp-stage">
             <div class="stage-box" id="stageHost">
               <span id="stageHostAvatar"></span>
@@ -450,10 +634,9 @@
                 <div class="stage-status" id="stageGuestStatus"></div>
               </div>
             </div>
-            <div class="stage-actions">
-              <button type="button" class="btn btn-ghost" id="btnOpenNovel">소설 뷰로 갈무리</button>
-            </div>
           </div>
+
+          <div class="rp-pager pager" id="rpPager" hidden></div>
 
           <div class="rp-log" id="rpLogContainer"></div>
 
@@ -532,6 +715,31 @@
     <div class="modal-foot">
       <button type="button" class="btn btn-ghost btn-close-modal">취소</button>
       <button type="button" class="btn btn-solid" id="btnLogin">로그인</button>
+    </div>
+  </div>
+</div>
+
+<!-- 채팅방 만들기 / 설정 -->
+<div class="modal-backdrop" id="modalChannelForm">
+  <div class="modal-box">
+    <div class="modal-title" id="chFormTitle">새 채팅방</div>
+    <p class="modal-desc">AU를 고르고 필요하면 제목을 붙이세요. 같은 AU로 여러 채팅방을 만들 수 있습니다.</p>
+    <div class="form-group" style="margin-top:16px;">
+      <label for="chAu">AU</label>
+      <select class="field" id="chAu"></select>
+    </div>
+    <div class="form-group">
+      <input type="text" class="field" id="chAuCustom" maxlength="20" placeholder="새 AU 이름" hidden />
+    </div>
+    <div class="form-group">
+      <label for="chName">제목</label>
+      <input type="text" class="field" id="chName" maxlength="20" placeholder="선택" />
+    </div>
+    <div class="form-error" id="chError"></div>
+    <div class="modal-foot">
+      <button type="button" class="btn btn-ghost foot-left" id="btnDeleteChannel" hidden>채팅방 삭제</button>
+      <button type="button" class="btn btn-ghost btn-close-modal">취소</button>
+      <button type="button" class="btn btn-solid" id="btnSubmitChannel">만들기</button>
     </div>
   </div>
 </div>
@@ -690,7 +898,7 @@
 <!-- 소설 뷰 -->
 <div class="modal-backdrop" id="modalNovelView">
   <div class="modal-box wide">
-    <div class="modal-title">소설본 갈무리</div>
+    <div class="modal-title" id="novelTitle">소설본 갈무리</div>
     <div class="novel-paper" id="novelTextOutput"></div>
     <div class="modal-foot">
       <button type="button" class="btn btn-ghost" id="btnCopyNovel">전체 복사</button>
@@ -737,11 +945,15 @@ const SUPABASE_KEY = 'sb_publishable_FyOuPSHSUKosjyhmwVM_-g_ZYjh4VZC';
 const DEFAULT_AUS = ['본편/기본', '현대 AU', '동양/무협 AU', '마피아/느와르 AU', '학원물 AU'];
 const MAX_LINKS = 5;
 const AVATAR_SIZE = 256;
+const CHANNEL_KEY = 'puka_ch:';
+const PAGE_SIZE = 5;        // 썰 · 역극 한 쪽에 보이는 개수
+const REPLY_PREVIEW = 5;    // 답글을 펼쳤을 때 처음 보이는 최근 답글 수
 
 /* ---------- 공용 유틸 ---------- */
 const $ = id => document.getElementById(id);
 const esc = s => String(s ?? '').replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
 const time = iso => Date.parse(iso) || 0;
+const canHover = () => window.matchMedia('(hover: hover)').matches;
 
 function normalizeUrl(value) {
   let v = String(value || '').trim();
@@ -825,6 +1037,42 @@ function resizeImage(file, size = AVATAR_SIZE) {
   });
 }
 
+/* 페이지 이동 막대 (썰풀이 · 역극 공용) */
+function pagerHtml(cur, total, edge) {
+  if (total <= 1) return '';
+  const items = [];
+  const from = Math.max(1, cur - 2);
+  const to = Math.min(total, cur + 2);
+  if (from > 1) { items.push(1); if (from > 2) items.push(0); }
+  for (let i = from; i <= to; i++) items.push(i);
+  if (to < total) { if (to < total - 1) items.push(0); items.push(total); }
+  const edgeBtn = edge && edge.page !== cur
+    ? `<button type="button" class="pager-btn pager-edge${edge.mobileOnly ? ' mobile-only' : ''}" data-page="${edge.page}">${esc(edge.label)}</button>`
+    : '';
+  return `
+    ${edge?.pos === 'start' ? edgeBtn : ''}
+    <button type="button" class="pager-btn" data-page="${cur - 1}"${cur <= 1 ? ' disabled' : ''}>이전</button>
+    <span class="pager-nums">${items.map(n => n
+      ? `<button type="button" class="pager-btn${n === cur ? ' active' : ''}" data-page="${n}">${n}</button>`
+      : '<span class="pager-gap">…</span>').join('')}</span>
+    <span class="pager-compact">${cur} / ${total}</span>
+    <button type="button" class="pager-btn" data-page="${cur + 1}"${cur >= total ? ' disabled' : ''}>다음</button>
+    ${edge?.pos === 'end' ? edgeBtn : ''}`;
+}
+
+/* 모바일 화면 높이 맞추기 (주소창 · 키보드 대응) */
+function fitViewport() {
+  const vv = window.visualViewport;
+  if (vv && Math.abs(vv.scale - 1) > 0.01) return;
+  const h = vv ? vv.height : window.innerHeight;
+  document.documentElement.style.setProperty('--app-h', `${Math.round(h)}px`);
+  if (window.scrollY) window.scrollTo(0, 0);
+  if (document.activeElement === $('rpInputText')) {
+    const box = $('rpLogContainer');
+    box.scrollTop = box.scrollHeight;
+  }
+}
+
 /* =========================================================
    API 레이어 (Supabase)
    ========================================================= */
@@ -899,8 +1147,9 @@ const api = {
   },
 
   async getRoom(roomId) {
-    const [room, threads, replies, logs] = await Promise.all([
+    const [room, channels, threads, replies, logs] = await Promise.all([
       q(sb.from('rooms').select('*').eq('id', roomId).maybeSingle()),
+      q(sb.from('channels').select('*').eq('room_id', roomId).order('created_at').order('id')),
       fetchAll(() => sb.from('threads').select('*').eq('room_id', roomId).order('created_at').order('id')),
       fetchAll(() => sb.from('replies').select('*').eq('room_id', roomId).order('created_at').order('id')),
       fetchAll(() => sb.from('logs').select('*').eq('room_id', roomId).order('created_at').order('id'))
@@ -910,7 +1159,8 @@ const api = {
     const byThread = {};
     replies.forEach(r => {
       (byThread[r.thread_id] ||= []).push({
-        id: r.id, authorRole: r.author_role, authorName: r.author_name, text: r.text, createdAt: r.created_at
+        id: r.id, authorRole: r.author_role, authorName: r.author_name, text: r.text,
+        createdAt: r.created_at, editedAt: r.edited_at
       });
     });
 
@@ -918,15 +1168,19 @@ const api = {
       roomId: room.id,
       hostCharId: room.host_char_id,
       guest: { links: [], avatar: '', ...(room.guest || {}) },
-      status: { host: room.status_host || '', guest: room.status_guest || '' },
       customAus: room.custom_aus || [],
+      channels: channels.map(c => ({
+        id: c.id, au: c.au, title: c.title || '',
+        status: { host: c.status_host || '', guest: c.status_guest || '' },
+        createdAt: c.created_at
+      })),
       threads: threads.map(t => ({
         id: t.id, au: t.au, authorRole: t.author_role, authorName: t.author_name,
-        text: t.text, createdAt: t.created_at, replies: byThread[t.id] || []
+        text: t.text, createdAt: t.created_at, editedAt: t.edited_at, replies: byThread[t.id] || []
       })),
       logs: logs.map(l => ({
-        id: l.id, kind: l.kind, role: l.role, speaker: l.speaker, status: l.status,
-        raw: l.raw, text: l.text, label: l.label, result: l.result, createdAt: l.created_at
+        id: l.id, channelId: l.channel_id, kind: l.kind, role: l.role, speaker: l.speaker, status: l.status,
+        raw: l.raw, text: l.text, label: l.label, result: l.result, createdAt: l.created_at, editedAt: l.edited_at
       }))
     };
   },
@@ -944,13 +1198,24 @@ const api = {
 
   deleteRoom(roomId) { return q(sb.rpc('delete_room', { p_room: roomId })); },
   updateGuestProfile(roomId, guest) { return q(sb.rpc('update_guest_profile', { p_room: roomId, p_guest: guest })); },
-  updateStatus(roomId, text) { return q(sb.rpc('update_status', { p_room: roomId, p_text: text })); },
   createThread(roomId, au, text) { return q(sb.rpc('create_thread', { p_room: roomId, p_au: au, p_text: text })); },
   createReply(threadId, text) { return q(sb.rpc('create_reply', { p_thread: threadId, p_text: text })); },
-  createLog(roomId, kind, text) { return q(sb.rpc('create_log', { p_room: roomId, p_kind: kind, p_text: text })); },
-  rollDice(roomId, { label, expr, special }) {
-    return q(sb.rpc('roll_dice', { p_room: roomId, p_label: label || '', p_expr: expr || null, p_special: special || null }));
+
+  createChannel(roomId, au, title) { return q(sb.rpc('create_channel', { p_room: roomId, p_au: au, p_title: title })); },
+  updateChannel(channelId, au, title) { return q(sb.rpc('update_channel', { p_channel: channelId, p_au: au, p_title: title })); },
+  deleteChannel(channelId) { return q(sb.rpc('delete_channel', { p_channel: channelId })); },
+  updateChannelStatus(channelId, text) { return q(sb.rpc('update_channel_status', { p_channel: channelId, p_text: text })); },
+  createChannelLog(channelId, kind, text) { return q(sb.rpc('create_channel_log', { p_channel: channelId, p_kind: kind, p_text: text })); },
+  rollChannelDice(channelId, { label, expr, special }) {
+    return q(sb.rpc('roll_channel_dice', { p_channel: channelId, p_label: label || '', p_expr: expr || null, p_special: special || null }));
   },
+
+  updateLog(id, text) { return q(sb.rpc('update_log', { p_id: id, p_text: text })); },
+  deleteLog(id) { return q(sb.rpc('delete_log', { p_id: id })); },
+  updateThread(id, text) { return q(sb.rpc('update_thread', { p_id: id, p_text: text })); },
+  deleteThread(id) { return q(sb.rpc('delete_thread', { p_id: id })); },
+  updateReply(id, text) { return q(sb.rpc('update_reply', { p_id: id, p_text: text })); },
+  deleteReply(id) { return q(sb.rpc('delete_reply', { p_id: id })); },
 
   async uploadImage(blob) {
     if (!state.userId) throw new Error('접속 정보를 확인할 수 없습니다. 새로고침해 주세요.');
@@ -961,10 +1226,14 @@ const api = {
     return sb.storage.from('avatars').getPublicUrl(path).data.publicUrl;
   },
 
-  subscribeRoom(roomId, onChange) {
+  /* 삭제 이벤트는 방 필터가 적용되지 않으므로 따로 받아 id로 확인한다 */
+  subscribeRoom(roomId, onChange, onDelete) {
     const ch = sb.channel(`room:${roomId}:${Date.now()}`);
-    ['threads', 'replies', 'logs'].forEach(table => {
-      ch.on('postgres_changes', { event: '*', schema: 'public', table, filter: `room_id=eq.${roomId}` }, onChange);
+    ['threads', 'replies', 'logs', 'channels'].forEach(table => {
+      ['INSERT', 'UPDATE'].forEach(event => {
+        ch.on('postgres_changes', { event, schema: 'public', table, filter: `room_id=eq.${roomId}` }, onChange);
+      });
+      ch.on('postgres_changes', { event: 'DELETE', schema: 'public', table }, payload => onDelete(table, payload.old?.id));
     });
     ch.on('postgres_changes', { event: 'UPDATE', schema: 'public', table: 'rooms', filter: `id=eq.${roomId}` }, onChange);
     ch.subscribe();
@@ -975,6 +1244,7 @@ const api = {
     const ch = sb.channel(`host-all:${Date.now()}`);
     ['rooms', 'threads', 'logs'].forEach(table => {
       ch.on('postgres_changes', { event: 'INSERT', schema: 'public', table }, onChange);
+      ch.on('postgres_changes', { event: 'DELETE', schema: 'public', table }, onChange);
     });
     ch.subscribe();
     return () => sb.removeChannel(ch);
@@ -994,13 +1264,23 @@ const state = {
   rooms: [],
   room: null,
   activeRoomId: null,
+  activeChannelId: null,
   filter: defaultFilter(),
+  sseolPage: 1,
+  rpPage: null,              // null = 최신 쪽을 따라감
+  openThreads: new Set(),    // 답글을 펼친 썰
+  allReplies: new Set(),     // 이전 답글까지 모두 보는 썰
+  expandedBodies: new Set(), // 본문을 펼친 썰
+  replyDrafts: {},
   profileMode: 'create',
   pendingCharId: null,
   pfAvatar: '',
   charFormId: null,
   cfAvatar: '',
   viewCharId: null,
+  channelFormId: null,
+  editing: null,
+  toolsOpen: null,
   unsubscribeRoom: null,
   unsubscribeAll: null,
   busy: false,
@@ -1012,6 +1292,7 @@ const charById = id => state.characters.find(c => c.id === id);
 const hostChar = () => charById(state.room.hostCharId) || EMPTY_CHAR;
 const roleName = role => role === 'host' ? hostChar().name : state.room.guest.name;
 const allAus = () => [...DEFAULT_AUS, ...(state.room?.customAus || [])];
+const isCustomAu = au => !DEFAULT_AUS.includes(au);
 
 function avatar(url, name, size = 'sm') {
   const initial = esc(String(name || '?').trim().charAt(0) || '?');
@@ -1112,6 +1393,16 @@ function scheduleRoomsRefresh() {
   roomsTimer = setTimeout(() => { loadRooms().catch(e => console.warn(e)); }, 400);
 }
 
+function roomHasId(table, id) {
+  const r = state.room;
+  if (!r || !id) return false;
+  if (table === 'channels') return r.channels.some(c => c.id === id);
+  if (table === 'logs') return r.logs.some(l => l.id === id);
+  if (table === 'threads') return r.threads.some(t => t.id === id);
+  if (table === 'replies') return r.threads.some(t => t.replies.some(x => x.id === id));
+  return false;
+}
+
 /* ---------- 테마 ---------- */
 const THEME_LABEL = { system: '시스템', light: '라이트', dark: '다크' };
 const THEME_ORDER = ['system', 'light', 'dark'];
@@ -1130,6 +1421,7 @@ function applyTheme(theme) {
 function applyRoleUI() {
   state.role = state.isHost ? 'host' : 'guest';
   $('hostSidebar').classList.toggle('hidden', !state.isHost);
+  $('btnSidebar').hidden = !state.isHost;
   $('currentRoleText').textContent = state.isHost ? '호스트' : '방문자';
   $('btnAuth').textContent = state.isHost ? '로그아웃' : '호스트 로그인';
   $('btnBackLobby').hidden = state.isHost;
@@ -1139,6 +1431,11 @@ function applyRoleUI() {
   $('lobbyDesc').textContent = state.isHost
     ? '방문자에게 보이는 쇼케이스입니다. 숨긴 캐릭터는 방문자에게 보이지 않고 새 교류방도 만들 수 없습니다.'
     : '캐릭터를 선택해 1:1 교류방을 만들거나, 발급받은 입장 코드로 이어서 들어갈 수 있습니다.';
+}
+
+function setSidebar(open) {
+  $('hostSidebar').classList.toggle('open', open);
+  $('sidebarScrim').classList.toggle('open', open);
 }
 
 function showView(id) {
@@ -1152,11 +1449,25 @@ function switchTab(tab) {
   $('panelSseol').classList.toggle('active', tab === 'sseol');
   $('panelRp').classList.toggle('active', tab === 'rp');
   if (tab === 'rp') { state.forceScroll = true; renderRp(); }
+  else updateClamps();
+}
+
+function resetRoomState() {
+  state.activeChannelId = null;
+  state.editing = null;
+  state.toolsOpen = null;
+  state.sseolPage = 1;
+  state.rpPage = null;
+  state.openThreads = new Set();
+  state.allReplies = new Set();
+  state.expandedBodies = new Set();
+  state.replyDrafts = {};
 }
 
 async function enterRoom(roomId) {
   if (state.unsubscribeRoom) { state.unsubscribeRoom(); state.unsubscribeRoom = null; }
   state.activeRoomId = roomId;
+  resetRoomState();
   state.filter = defaultFilter();
   $('filterQuery').value = '';
   $('filterSort').value = 'new';
@@ -1168,15 +1479,19 @@ async function enterRoom(roomId) {
     throw e;
   }
   showView('viewPairRoom');
+  updateClamps();
   renderSidebar();
   history.replaceState(null, '', `${location.pathname}?room=${encodeURIComponent(roomId)}`);
-  state.unsubscribeRoom = api.subscribeRoom(roomId, scheduleRoomRefresh);
+  state.unsubscribeRoom = api.subscribeRoom(roomId, scheduleRoomRefresh, (table, id) => {
+    if (roomHasId(table, id)) scheduleRoomRefresh();
+  });
 }
 
 async function goLobby() {
   if (state.unsubscribeRoom) { state.unsubscribeRoom(); state.unsubscribeRoom = null; }
   state.activeRoomId = null;
   state.room = null;
+  resetRoomState();
   history.replaceState(null, '', location.pathname);
   await Promise.all([loadRooms(), loadCharacters()]);
   renderShowcase();
@@ -1204,7 +1519,7 @@ function renderSidebar() {
       <div class="room-name">${esc(c?.name || '')} × ${esc(r.guestName)}</div>
       <div class="room-meta">썰 ${r.threadCount} · 대화 ${r.logCount}</div>
     `;
-    div.addEventListener('click', run(() => enterRoom(r.roomId)));
+    div.addEventListener('click', run(async () => { setSidebar(false); await enterRoom(r.roomId); }));
     box.appendChild(div);
   });
 }
@@ -1371,6 +1686,7 @@ async function submitChar() {
 function renderRoom() {
   if (!state.room) return;
   const room = state.room;
+  ensureActiveChannel();
   const hn = hostChar().name;
   $('pairHeaderTitle').textContent = `${hn} × ${room.guest.name}`;
   $('activePersonaBadge').textContent = state.isHost
@@ -1378,7 +1694,7 @@ function renderRoom() {
     : `방문자로 접속 중 — ${room.guest.name}`;
   $('sseolWriterAvatar').innerHTML = avatarOf(state.role, 'xs');
   $('sseolWriterName').textContent = roleName(state.role);
-  renderAuSelect();
+  fillAuSelect($('newSseolAu'), $('newSseolAuCustom'), $('newSseolAu').value);
   renderSseols();
   renderRp();
   if ($('modalProfileView').classList.contains('open')) renderProfileView();
@@ -1397,580 +1713,23 @@ async function deleteRoom() {
   await goLobby();
 }
 
-function renderAuSelect() {
-  const sel = $('newSseolAu');
-  const prev = sel.value;
+function fillAuSelect(sel, customInput, preferred) {
   const customs = state.room.customAus;
   sel.innerHTML = `
     <optgroup label="기본">${DEFAULT_AUS.map(a => `<option value="${esc(a)}">${esc(a)}</option>`).join('')}</optgroup>
     ${customs.length ? `<optgroup label="이 방의 AU">${customs.map(a => `<option value="${esc(a)}">${esc(a)}</option>`).join('')}</optgroup>` : ''}
     <option value="__custom__">기타 (직접 입력)</option>
   `;
-  sel.value = [...allAus(), '__custom__'].includes(prev) ? prev : DEFAULT_AUS[0];
-  $('newSseolAuCustom').hidden = sel.value !== '__custom__';
+  sel.value = [...allAus(), '__custom__'].includes(preferred) ? preferred : DEFAULT_AUS[0];
+  customInput.hidden = sel.value !== '__custom__';
 }
 
-function renderSseols() {
-  const room = state.room;
-  const f = state.filter;
-  const threads = room.threads;
-
-  const counts = {};
-  threads.forEach(t => { counts[t.au] = (counts[t.au] || 0) + 1; });
-  const chipBox = $('auFilterChips');
-  chipBox.innerHTML = '';
-  [
-    { value: 'all', label: '전체', n: threads.length, custom: false },
-    ...DEFAULT_AUS.map(a => ({ value: a, label: a, n: counts[a] || 0, custom: false })),
-    ...room.customAus.map(a => ({ value: a, label: a, n: counts[a] || 0, custom: true }))
-  ].forEach(c => {
-    const b = document.createElement('button');
-    b.type = 'button';
-    b.className = 'chip' + (c.custom ? ' custom' : '') + (f.au === c.value ? ' active' : '');
-    b.innerHTML = `${esc(c.label)}<span class="chip-count">${c.n}</span>`;
-    b.addEventListener('click', () => { state.filter.au = c.value; renderSseols(); });
-    chipBox.appendChild(b);
-  });
-  if (f.au !== 'all' && !allAus().includes(f.au)) state.filter.au = 'all';
-
-  $('filterAuthor').innerHTML = `
-    <option value="all">작성자 전체</option>
-    <option value="host">${esc(hostChar().name)}</option>
-    <option value="guest">${esc(room.guest.name)}</option>
-  `;
-  $('filterAuthor').value = f.author;
-
-  const q = f.q.trim().toLowerCase();
-  const list = threads.filter(t => {
-    if (f.au !== 'all' && t.au !== f.au) return false;
-    if (f.author !== 'all' && t.authorRole !== f.author) return false;
-    if (q && ![t.text, ...t.replies.map(r => r.text)].join(' ').toLowerCase().includes(q)) return false;
-    return true;
-  });
-  if (f.sort === 'new') list.sort((a, b) => time(b.createdAt) - time(a.createdAt));
-  else if (f.sort === 'old') list.sort((a, b) => time(a.createdAt) - time(b.createdAt));
-  else list.sort((a, b) => b.replies.length - a.replies.length || time(b.createdAt) - time(a.createdAt));
-
-  $('filterCount').textContent = `${list.length} / ${threads.length}`;
-
-  const box = $('sseolThreadList');
-  const drafts = {};
-  let focusedId = null;
-  box.querySelectorAll('.reply-row input').forEach(inp => {
-    drafts[inp.dataset.thread] = inp.value;
-    if (document.activeElement === inp) focusedId = inp.dataset.thread;
-  });
-  box.innerHTML = '';
-
-  if (!threads.length) {
-    box.innerHTML = '<div class="empty-state">아직 작성된 썰이 없습니다.</div>';
-    return;
-  }
-  if (!list.length) {
-    box.innerHTML = '<div class="empty-state">조건에 맞는 썰이 없습니다.<br><button type="button" class="btn btn-ghost" id="btnResetFilter">필터 초기화</button></div>';
-    $('btnResetFilter').addEventListener('click', () => {
-      state.filter = defaultFilter();
-      $('filterQuery').value = '';
-      $('filterSort').value = 'new';
-      renderSseols();
-    });
-    return;
-  }
-
-  const writer = roleName(state.role);
-  list.forEach(t => {
-    const el = document.createElement('article');
-    el.className = 'thread';
-    el.innerHTML = `
-      <div class="thread-head">
-        <span class="thread-author">${avatarOf(t.authorRole, 'sm')}${esc(t.authorName)}</span>
-        <button type="button" class="au-label ${DEFAULT_AUS.includes(t.au) ? '' : 'custom'}">${esc(t.au)}</button>
-      </div>
-      <div class="thread-body">${esc(t.text)}</div>
-      ${t.replies.length ? `<div class="replies">${t.replies.map(r => `
-        <div class="reply">${avatarOf(r.authorRole, 'xs')}<div><strong>${esc(r.authorName)}</strong>${esc(r.text)}</div></div>
-      `).join('')}</div>` : ''}
-      <div class="reply-row">
-        <input type="text" class="field" placeholder="${esc(writer)}(으)로 이어 쓰기" />
-        <button type="button" class="btn btn-ghost">답글</button>
-      </div>
-    `;
-    el.querySelector('.au-label').addEventListener('click', () => { state.filter.au = t.au; renderSseols(); });
-    const input = el.querySelector('.reply-row input');
-    input.dataset.thread = t.id;
-    input.value = drafts[t.id] || '';
-    const submit = run(async () => {
-      const text = input.value.trim();
-      if (!text) return;
-      await api.createReply(t.id, text);
-      input.value = '';
-      await refresh();
-    });
-    el.querySelector('.reply-row button').addEventListener('click', submit);
-    input.addEventListener('keydown', e => { if (e.key === 'Enter' && !e.isComposing) submit(); });
-    box.appendChild(el);
-    if (focusedId === t.id) input.focus();
-  });
+/* ---------- 수정 · 삭제 (공용) ---------- */
+function toolsHtml(key, editable = true) {
+  const k = esc(key);
+  return `<span class="tools">${editable ? `<button type="button" data-tool="edit" data-key="${k}">수정</button>` : ''}<button type="button" data-tool="delete" data-key="${k}">삭제</button></span>`;
 }
 
-async function addThread() {
-  const text = $('newSseolText').value.trim();
-  const selected = $('newSseolAu').value;
-  const au = selected === '__custom__' ? $('newSseolAuCustom').value.trim() : selected;
-  $('composerError').textContent = '';
-  if (selected === '__custom__' && !au) { $('composerError').textContent = '새 AU 이름을 입력해 주세요.'; return; }
-  if (!text) { $('composerError').textContent = '내용을 입력해 주세요.'; return; }
-
-  await api.createThread(state.room.roomId, au, text);
-  $('newSseolText').value = '';
-  $('newSseolAuCustom').value = '';
-  await refresh();
-  $('newSseolAu').value = au;
-  $('newSseolAuCustom').hidden = true;
-}
-
-/* ---------- 역극 ---------- */
-function setStageStatus(el, value) {
-  el.textContent = value || '상태 미설정';
-  el.classList.toggle('is-empty', !value);
-}
-
-function renderRp() {
-  const room = state.room;
-  if (!room) return;
-  $('stageHostRole').textContent = state.isHost ? '호스트 · 나' : '호스트';
-  $('stageGuestRole').textContent = state.isHost ? '방문자' : '방문자 · 나';
-  $('stageHostAvatar').innerHTML = avatarOf('host', 'md');
-  $('stageGuestAvatar').innerHTML = avatarOf('guest', 'md');
-  $('stageHostName').textContent = hostChar().name;
-  $('stageGuestName').textContent = room.guest.name;
-  setStageStatus($('stageHostStatus'), room.status.host);
-  setStageStatus($('stageGuestStatus'), room.status.guest);
-  $('stageHost').classList.toggle('mine', state.isHost);
-  $('stageGuest').classList.toggle('mine', !state.isHost);
-  if (document.activeElement !== $('statusInput')) $('statusInput').value = room.status[state.role] || '';
-
-  const box = $('rpLogContainer');
-  const nearBottom = box.scrollHeight - box.scrollTop - box.clientHeight < 80;
-  box.innerHTML = '';
-  room.logs.forEach(log => {
-    const div = document.createElement('div');
-    if (log.kind === 'narration') {
-      div.className = 'rp-narration';
-      div.textContent = log.text;
-    } else if (log.kind === 'dice') {
-      div.className = 'rp-dice';
-      div.textContent = `[${log.speaker}${log.label ? ' · ' + log.label : ''}] ${log.result}`;
-    } else {
-      div.className = 'rp-row' + (log.role === state.role ? ' mine' : '');
-      div.innerHTML = `
-        ${avatarOf(log.role, 'sm')}
-        <div class="rp-post">
-          <div class="rp-meta">
-            <span class="rp-speaker">${esc(log.speaker)}</span>
-            ${log.status ? `<span class="rp-status">${esc(log.status)}</span>` : ''}
-          </div>
-          ${parseMessage(log.raw).map(s => s.kind === 'speech'
-            ? `<div class="rp-bubble">${esc(s.text)}</div>`
-            : `<div class="rp-action">${esc(s.text)}</div>`).join('')}
-        </div>
-      `;
-    }
-    box.appendChild(div);
-  });
-  if (nearBottom || state.forceScroll) box.scrollTop = box.scrollHeight;
-  state.forceScroll = false;
-}
-
-async function commitStatusIfChanged() {
-  const text = $('statusInput').value.trim();
-  if (text === (state.room.status[state.role] || '')) return;
-  await api.updateStatus(state.room.roomId, text);
-}
-
-async function sendRp() {
-  const input = $('rpInputText');
-  const raw = input.value.trim();
-  if (!raw) return;
-  await commitStatusIfChanged();
-  await api.createLog(state.room.roomId, $('rpInputMode').value === 'narration' ? 'narration' : 'post', raw);
-  input.value = '';
-  state.forceScroll = true;
-  await refresh();
-}
-
-async function rollDice(payload) {
-  await api.rollDice(state.room.roomId, { label: $('diceLabel').value, ...payload });
-  $('diceLabel').value = '';
-  state.forceScroll = true;
-  await refresh();
-}
-
-async function rollCustom() {
-  const expr = $('diceCustom').value;
-  if (!parseDiceExpr(expr)) {
-    $('diceError').textContent = '형식: NdM±K (최대 100개 · 1000면)';
-    return;
-  }
-  $('diceError').textContent = '';
-  $('diceCustom').value = '';
-  await rollDice({ expr });
-}
-
-function openNovelModal() {
-  const text = state.room.logs.map(log => {
-    if (log.kind === 'narration') return '\n' + log.text + '\n';
-    if (log.kind === 'dice') return `(${log.speaker}${log.label ? ' · ' + log.label : ''} — ${log.result})`;
-    return parseMessage(log.raw).map(s => s.kind === 'speech' ? `${log.speaker}  “${s.text}”` : s.text).join('\n');
-  }).join('\n').trim();
-  $('novelTextOutput').textContent = text;
-  $('modalNovelView').classList.add('open');
-}
-
-/* ---------- 링크 입력 (공용) ---------- */
-function addLinkRow(boxId, btnId, value = '') {
-  const box = $(boxId);
-  if (box.children.length >= MAX_LINKS) return;
-  const row = document.createElement('div');
-  row.className = 'link-row';
-  row.innerHTML = `
-    <input type="url" class="field" placeholder="https://" />
-    <button type="button" class="btn btn-ghost btn-small">삭제</button>
-  `;
-  row.querySelector('input').value = value;
-  row.querySelector('button').addEventListener('click', () => {
-    row.remove();
-    if (!box.children.length) addLinkRow(boxId, btnId);
-    $(btnId).disabled = box.children.length >= MAX_LINKS;
-  });
-  box.appendChild(row);
-  $(btnId).disabled = box.children.length >= MAX_LINKS;
-}
-
-function collectLinks(boxId) {
-  const links = [...$(boxId).querySelectorAll('input')].map(i => i.value.trim()).filter(Boolean).map(normalizeUrl);
-  return links.some(l => !l) ? null : links;
-}
-
-/* ---------- 방문자 프로필 작성 / 수정 ---------- */
-const PF_INPUTS = {
-  name: 'pfName', nameAlt: 'pfNameAlt', age: 'pfAge', gender: 'pfGender', affiliation: 'pfAffiliation',
-  world: 'pfWorld', personality: 'pfPersonality', intro: 'pfIntro', appearance: 'pfAppearance',
-  relation: 'pfRelation', ng: 'pfNg', owner: 'pfOwner'
-};
-
-function renderPfAvatar() {
-  $('pfAvatarPreview').innerHTML = avatar(state.pfAvatar, $('pfName').value || '?', 'xl');
-  $('btnRemoveAvatar').hidden = !state.pfAvatar;
-}
-
-function openProfileForm(mode, charId) {
-  state.profileMode = mode;
-  state.pendingCharId = charId || null;
-  const g = mode === 'edit' ? state.room.guest : {};
-  Object.entries(PF_INPUTS).forEach(([key, id]) => { $(id).value = g[key] || ''; });
-  state.pfAvatar = g.avatar || '';
-  renderPfAvatar();
-  $('pfPassword').value = '';
-  $('pfLinks').innerHTML = '';
-  (g.links && g.links.length ? g.links : ['']).forEach(v => addLinkRow('pfLinks', 'btnAddLink', v));
-  $('pfError').textContent = '';
-  $('pfAccessSection').hidden = mode === 'edit';
-  $('pfTitle').textContent = mode === 'edit' ? '방문자 프로필 수정' : `${charById(charId)?.name || ''} — 새 교류방`;
-  $('btnSubmitProfile').textContent = mode === 'edit' ? '저장' : '생성 후 입장';
-  closeModals();
-  $('modalProfileForm').classList.add('open');
-  $('pfName').focus();
-}
-
-function collectProfile() {
-  const profile = {};
-  Object.entries(PF_INPUTS).forEach(([key, id]) => { profile[key] = $(id).value.trim(); });
-  if (!profile.name) return { error: '이름을 입력해 주세요.' };
-  const links = collectLinks('pfLinks');
-  if (!links) return { error: '링크 형식을 확인해 주세요.' };
-  profile.links = links;
-  profile.avatar = state.pfAvatar;
-  return { profile };
-}
-
-async function submitProfile() {
-  const { profile, error } = collectProfile();
-  if (error) { $('pfError').textContent = error; return; }
-
-  if (state.profileMode === 'edit') {
-    await api.updateGuestProfile(state.room.roomId, profile);
-    closeModals();
-    await refresh();
-    return;
-  }
-
-  const password = $('pfPassword').value;
-  if (password.length < 4) { $('pfError').textContent = '비밀번호는 4자 이상으로 정해 주세요.'; return; }
-  const { roomId } = await api.createRoom({ hostCharId: state.pendingCharId, guest: profile, password });
-  closeModals();
-  await enterRoom(roomId);
-}
-
-async function uploadAvatarFile(file) {
-  const blob = await resizeImage(file);
-  return api.uploadImage(blob);
-}
-
-/* ---------- 방 안 프로필 보기 ---------- */
-const GUEST_VIEW_FIELDS = [
-  ['nameAlt', '다른 표기'], ['age', '나이'], ['gender', '성별'], ['affiliation', '소속 · 직업'],
-  ['world', '세계관 · 장르'], ['personality', '성격'], ['intro', '소개'], ['appearance', '외형'],
-  ['relation', '원하는 관계성'], ['ng', '지뢰 · NG'], ['owner', '오너']
-];
-
-function renderProfileView() {
-  const c = hostChar();
-  const g = state.room.guest;
-  const hostRows = charRowsHtml(c);
-
-  $('pvHost').innerHTML = `
-    ${charHeadHtml(c, `호스트 캐릭터${state.isHost ? ' · 나' : ''}`)}
-    ${hostRows ? `<dl class="profile-dl">${hostRows}</dl>` : '<p class="pv-empty">등록된 정보가 없습니다.</p>'}
-    ${state.isHost ? `<div class="pv-actions">
-      <button type="button" class="btn btn-ghost btn-small" id="btnHostEdit">프로필 수정</button>
-      <button type="button" class="btn btn-ghost btn-small" id="btnHostAvatar">인장 변경</button>
-    </div>` : ''}
-  `;
-
-  const guestRows = GUEST_VIEW_FIELDS.filter(([key]) => g[key]).map(([key, label]) => `<dt>${esc(label)}</dt><dd>${esc(g[key])}</dd>`);
-  if (g.links && g.links.length) guestRows.push(`<dt>링크</dt><dd>${linksHtml(g.links)}</dd>`);
-
-  $('pvGuest').innerHTML = `
-    <div class="pv-head">
-      ${avatar(g.avatar, g.name, 'lg')}
-      <div>
-        <div class="pv-role">방문자${state.isHost ? '' : ' · 나'}</div>
-        <div class="pv-name">${esc(g.name)}</div>
-      </div>
-    </div>
-    ${guestRows.length ? `<dl class="profile-dl">${guestRows.join('')}</dl>` : '<p class="pv-empty">등록된 정보가 없습니다.</p>'}
-    ${state.isHost ? '' : `<div class="pv-actions">
-      <button type="button" class="btn btn-ghost btn-small" id="btnEditProfile">프로필 수정</button>
-    </div>`}
-  `;
-
-  if (state.isHost) {
-    $('btnHostEdit').addEventListener('click', () => { const ch = charById(state.room.hostCharId); if (ch) openCharForm(ch); });
-    $('btnHostAvatar').addEventListener('click', () => $('hostAvatarFile').click());
-  } else {
-    $('btnEditProfile').addEventListener('click', () => openProfileForm('edit'));
-  }
-}
-
-function openProfileView() {
-  renderProfileView();
-  $('modalProfileView').classList.add('open');
-}
-
-/* ---------- 로그인 / 입장 / 공유 ---------- */
-async function hostLogin() {
-  $('loginError').textContent = '';
-  const email = $('loginEmail').value.trim();
-  const password = $('loginPassword').value;
-  if (!email || !password) { $('loginError').textContent = '이메일과 비밀번호를 입력해 주세요.'; return; }
-  try {
-    await api.hostLogin(email, password);
-    location.href = location.pathname;
-  } catch (e) {
-    $('loginError').textContent = e.message;
-  }
-}
-
-async function logout() {
-  await api.logout();
-  location.href = location.pathname;
-}
-
-async function enterByToken() {
-  const code = $('tokenInput').value.trim();
-  const password = $('tokenPassInput').value;
-  if (!code || !password) throw new Error('입장 코드와 비밀번호를 입력해 주세요.');
-  const { roomId } = await api.joinRoom({ code, password });
-  $('tokenPassInput').value = '';
-  await enterRoom(roomId);
-}
-
-function openShareModal() {
-  const code = state.room.roomId;
-  $('shareUrlBox').value = `${location.origin}${location.pathname}?room=${encodeURIComponent(code)}`;
-  $('shareCodeBox').value = code;
-  $('modalShareRoom').classList.add('open');
-}
-
-function copyText(text, btn) {
-  if (!navigator.clipboard) return;
-  navigator.clipboard.writeText(text).then(() => {
-    const original = btn.textContent;
-    btn.textContent = '복사됨';
-    setTimeout(() => { btn.textContent = original; }, 1200);
-  }).catch(() => {});
-}
-
-function closeModals() {
-  document.querySelectorAll('.modal-backdrop').forEach(m => m.classList.remove('open'));
-}
-
-/* ---------- 이벤트 바인딩 ---------- */
-const onEnter = (el, fn) => el.addEventListener('keydown', e => { if (e.key === 'Enter' && !e.isComposing) fn(); });
-
-$('btnTheme').addEventListener('click', () => {
-  applyTheme(THEME_ORDER[(THEME_ORDER.indexOf(getTheme()) + 1) % THEME_ORDER.length]);
-});
-$('btnAuth').addEventListener('click', () => {
-  if (state.isHost) run(logout)();
-  else { $('loginError').textContent = ''; $('modalLogin').classList.add('open'); $('loginEmail').focus(); }
-});
-$('btnLogin').addEventListener('click', run(hostLogin));
-onEnter($('loginPassword'), run(hostLogin));
-
-$('btnManageChars').addEventListener('click', run(goLobby));
-$('btnBackLobby').addEventListener('click', run(goLobby));
-$('btnDeleteRoom').addEventListener('click', run(deleteRoom));
-$('tabBtnSseol').addEventListener('click', () => switchTab('sseol'));
-$('tabBtnRp').addEventListener('click', () => switchTab('rp'));
-$('btnOpenShare').addEventListener('click', openShareModal);
-$('btnOpenProfile').addEventListener('click', openProfileView);
-$('btnCvCreate').addEventListener('click', () => { if (state.viewCharId) openProfileForm('create', state.viewCharId); });
-
-$('newSseolAu').addEventListener('change', e => {
-  const custom = e.target.value === '__custom__';
-  $('newSseolAuCustom').hidden = !custom;
-  if (custom) $('newSseolAuCustom').focus();
-});
-$('btnAddSseolThread').addEventListener('click', run(addThread));
-
-$('filterAuthor').addEventListener('change', e => { state.filter.author = e.target.value; renderSseols(); });
-$('filterQuery').addEventListener('input', e => { state.filter.q = e.target.value; renderSseols(); });
-$('filterSort').addEventListener('change', e => { state.filter.sort = e.target.value; renderSseols(); });
-
-const applyStatus = run(async () => { await commitStatusIfChanged(); $('statusInput').blur(); await refresh(); });
-$('btnApplyStatus').addEventListener('click', applyStatus);
-onEnter($('statusInput'), applyStatus);
-
-$('btnToggleDice').addEventListener('click', () => {
-  const open = $('dicePanel').classList.toggle('open');
-  $('btnToggleDice').classList.toggle('active', open);
-});
-document.querySelectorAll('[data-dice]').forEach(btn => {
-  btn.addEventListener('click', run(() => rollDice({ expr: btn.dataset.dice })));
-});
-document.querySelectorAll('[data-special]').forEach(btn => {
-  btn.addEventListener('click', run(() => rollDice({ special: btn.dataset.special })));
-});
-const customRoll = run(rollCustom);
-$('btnRollCustom').addEventListener('click', customRoll);
-onEnter($('diceCustom'), customRoll);
-
-const send = run(sendRp);
-$('btnSendRp').addEventListener('click', send);
-onEnter($('rpInputText'), send);
-$('btnOpenNovel').addEventListener('click', openNovelModal);
-$('btnCopyNovel').addEventListener('click', e => copyText($('novelTextOutput').textContent, e.currentTarget));
-
-// 방문자 프로필
-$('btnPickAvatar').addEventListener('click', () => $('pfAvatarFile').click());
-$('btnRemoveAvatar').addEventListener('click', () => { state.pfAvatar = ''; renderPfAvatar(); });
-$('pfAvatarFile').addEventListener('change', run(async e => {
-  const file = e.target.files[0];
-  e.target.value = '';
-  if (!file) return;
-  state.pfAvatar = await uploadAvatarFile(file);
-  renderPfAvatar();
-}));
-$('pfName').addEventListener('input', () => { if (!state.pfAvatar) renderPfAvatar(); });
-$('btnAddLink').addEventListener('click', () => addLinkRow('pfLinks', 'btnAddLink'));
-$('btnSubmitProfile').addEventListener('click', run(submitProfile));
-
-// 호스트 캐릭터 폼
-$('btnCfPickAvatar').addEventListener('click', () => $('cfAvatarFile').click());
-$('btnCfRemoveAvatar').addEventListener('click', () => { state.cfAvatar = ''; renderCfAvatar(); });
-$('cfAvatarFile').addEventListener('change', run(async e => {
-  const file = e.target.files[0];
-  e.target.value = '';
-  if (!file) return;
-  state.cfAvatar = await uploadAvatarFile(file);
-  renderCfAvatar();
-}));
-$('cfName').addEventListener('input', () => { if (!state.cfAvatar) renderCfAvatar(); });
-$('btnCfAddLink').addEventListener('click', () => addLinkRow('cfLinks', 'btnCfAddLink'));
-$('btnSubmitChar').addEventListener('click', run(submitChar));
-
-// 방 안 프로필에서 호스트 인장 바로 변경
-$('hostAvatarFile').addEventListener('change', run(async e => {
-  const file = e.target.files[0];
-  e.target.value = '';
-  if (!file) return;
-  const url = await uploadAvatarFile(file);
-  await api.updateCharacterAvatar(state.room.hostCharId, url);
-  await reloadCharacters();
-}));
-
-const join = run(enterByToken);
-$('btnEnterByToken').addEventListener('click', join);
-onEnter($('tokenInput'), join);
-onEnter($('tokenPassInput'), join);
-
-document.querySelectorAll('[data-copy]').forEach(btn => {
-  btn.addEventListener('click', () => copyText($(btn.dataset.copy).value, btn));
-});
-document.querySelectorAll('.btn-close-modal').forEach(btn => btn.addEventListener('click', closeModals));
-document.querySelectorAll('.modal-backdrop').forEach(m => {
-  m.addEventListener('click', e => { if (e.target === m) closeModals(); });
-});
-document.addEventListener('keydown', e => { if (e.key === 'Escape') closeModals(); });
-
-/* ---------- 시작 ---------- */
-function showPageNotice(title, body) {
-  $('appBody').innerHTML = `<div class="page-notice"><strong>${esc(title)}</strong>${body}</div>`;
-}
-
-async function init() {
-  applyTheme(getTheme());
-
-  if (!configured) {
-    showPageNotice('연결 설정이 필요합니다',
-      'HTML 파일 안의 <code>SUPABASE_URL</code>과 <code>SUPABASE_KEY</code>에 내 프로젝트 값을 넣어 주세요.');
-    return;
-  }
-
-  try {
-    const session = await api.ensureSession();
-    state.userId = session.user.id;
-    state.isHost = await api.isHost();
-    await loadCharacters();
-    applyRoleUI();
-    await loadRooms();
-
-    const code = new URLSearchParams(location.search).get('room');
-    const known = code && state.rooms.some(r => r.roomId === code.toUpperCase());
-
-    if (known) {
-      await enterRoom(code.toUpperCase());
-    } else if (state.isHost && state.rooms.length) {
-      await enterRoom(state.rooms[0].roomId);
-    } else {
-      renderShowcase();
-      renderSidebar();
-      showView('viewShowcase');
-      if (code && !state.isHost) {
-        $('tokenInput').value = code.toUpperCase();
-        $('tokenPassInput').focus();
-      }
-    }
-
-    if (state.isHost) state.unsubscribeAll = api.subscribeAllRooms(scheduleRoomsRefresh);
-  } catch (e) {
-    showPageNotice('불러오는 중 문제가 생겼습니다', esc(e.message || '알 수 없는 오류'));
-  }
-}
-
-init();
-</script>
-</body>
-</html>
+function editorHtml({ enterSaves = false, rows = 3 } = {}) {
+  return `
+    <div class="edit-box">
