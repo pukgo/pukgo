@@ -298,6 +298,7 @@
   .profile-cols { display: grid; grid-template-columns: 1fr 1fr; border: 1px solid var(--line); margin-top: 16px; }
   .profile-col { padding: 20px; min-width: 0; }
   .profile-col + .profile-col { border-left: 1px solid var(--line); }
+  .profile-single { border: 1px solid var(--line); padding: 20px; margin-top: 16px; }
   .pv-head { display: flex; gap: 14px; align-items: center; margin-bottom: 4px; }
   .pv-role { font-size: 11px; letter-spacing: .06em; color: var(--ink-3); }
   .pv-name { font-size: 17px; font-weight: 600; letter-spacing: -0.02em; margin-top: 2px; }
@@ -387,6 +388,7 @@
           </div>
           <button type="button" class="btn btn-ghost" id="btnOpenProfile">프로필</button>
           <button type="button" class="btn btn-ghost" id="btnOpenShare">초대 링크</button>
+          <button type="button" class="btn btn-ghost" id="btnDeleteRoom" hidden>방 삭제</button>
         </div>
       </div>
 
@@ -538,7 +540,7 @@
 <div class="modal-backdrop" id="modalCharForm">
   <div class="modal-box form">
     <div class="modal-title" id="cfTitle">새 캐릭터</div>
-    <p class="modal-desc">이름만 필수입니다. 저장하면 쇼케이스에 바로 반영됩니다.</p>
+    <p class="modal-desc">이름만 필수입니다. 저장하면 쇼케이스와 프로필에 바로 반영됩니다.</p>
 
     <div class="form-section-title">인장</div>
     <div class="avatar-field">
@@ -557,12 +559,17 @@
     <div class="form-grid">
       <div class="form-group"><label for="cfName">이름 *</label><input type="text" class="field" id="cfName" maxlength="30" /></div>
       <div class="form-group"><label for="cfSub">다른 표기</label><input type="text" class="field" id="cfSub" maxlength="40" /></div>
-      <div class="form-group"><label for="cfCode">카드 코드</label><input type="text" class="field" id="cfCode" maxlength="4" placeholder="선택" /></div>
-      <div class="form-group"><label for="cfSort">표시 순서</label><input type="number" class="field" id="cfSort" min="0" max="999" /></div>
+      <div class="form-group"><label for="cfAge">나이</label><input type="text" class="field" id="cfAge" maxlength="20" /></div>
+      <div class="form-group"><label for="cfGender">성별</label><input type="text" class="field" id="cfGender" maxlength="20" /></div>
+      <div class="form-group"><label for="cfAffiliation">소속 · 직업</label><input type="text" class="field" id="cfAffiliation" maxlength="40" /></div>
+      <div class="form-group"><label for="cfWorld">세계관 · 장르</label><input type="text" class="field" id="cfWorld" maxlength="40" /></div>
     </div>
 
-    <div class="form-section-title">쇼케이스</div>
-    <div class="form-group"><label for="cfStatus">상태 문구</label><input type="text" class="field" id="cfStatus" maxlength="20" /></div>
+    <div class="form-section-title">쇼케이스 카드</div>
+    <div class="form-grid">
+      <div class="form-group"><label for="cfStatus">상태 문구</label><input type="text" class="field" id="cfStatus" maxlength="20" /></div>
+      <div class="form-group"><label for="cfCode">카드 코드</label><input type="text" class="field" id="cfCode" maxlength="4" placeholder="선택" /></div>
+    </div>
     <label class="check-row"><input type="checkbox" id="cfOpen" /> 상태 문구를 강조 표시</label>
     <div class="form-group">
       <label for="cfTags">태그</label>
@@ -570,11 +577,37 @@
       <p class="form-hint">띄어쓰기나 쉼표로 구분합니다. 최대 10개, #은 자동으로 붙습니다.</p>
     </div>
     <div class="form-group"><label for="cfDesc">소개</label><textarea class="field" id="cfDesc" rows="3" maxlength="500"></textarea></div>
+    <div class="form-group"><label for="cfSort">표시 순서</label><input type="number" class="field" id="cfSort" min="0" max="999" /></div>
+
+    <div class="form-section-title">캐릭터</div>
+    <div class="form-group"><label for="cfPersonality">성격 키워드</label><input type="text" class="field" id="cfPersonality" maxlength="80" /></div>
+    <div class="form-group"><label for="cfAppearance">외형</label><textarea class="field" id="cfAppearance" rows="2" maxlength="300"></textarea></div>
+
+    <div class="form-section-title">교류</div>
+    <div class="form-group"><label for="cfRelation">원하는 관계성</label><input type="text" class="field" id="cfRelation" maxlength="100" /></div>
+    <div class="form-group"><label for="cfNg">지뢰 · NG</label><input type="text" class="field" id="cfNg" maxlength="100" /></div>
+
+    <div class="form-section-title">프로필 링크</div>
+    <div id="cfLinks"></div>
+    <button type="button" class="btn btn-ghost btn-small" id="btnCfAddLink">+ 링크 추가</button>
+    <p class="form-hint">최대 5개까지 추가할 수 있습니다.</p>
 
     <div class="form-error" id="cfError"></div>
     <div class="modal-foot">
       <button type="button" class="btn btn-ghost btn-close-modal">취소</button>
       <button type="button" class="btn btn-solid" id="btnSubmitChar">저장</button>
+    </div>
+  </div>
+</div>
+
+<!-- 쇼케이스에서 호스트 캐릭터 프로필 보기 -->
+<div class="modal-backdrop" id="modalCharView">
+  <div class="modal-box wide">
+    <div class="modal-title">캐릭터 프로필</div>
+    <div class="profile-single" id="cvBody"></div>
+    <div class="modal-foot">
+      <button type="button" class="btn btn-ghost btn-close-modal">닫기</button>
+      <button type="button" class="btn btn-solid" id="btnCvCreate">이 캐릭터와 교류방 만들기</button>
     </div>
   </div>
 </div>
@@ -639,7 +672,7 @@
   </div>
 </div>
 
-<!-- 프로필 보기 -->
+<!-- 방 안 프로필 보기 -->
 <div class="modal-backdrop" id="modalProfileView">
   <div class="modal-box xwide">
     <div class="modal-title">프로필</div>
@@ -817,7 +850,8 @@ async function fetchAll(makeQuery) {
 
 const mapChar = c => ({
   id: c.id, code: c.code, name: c.name, sub: c.sub, status: c.status, open: c.open,
-  tags: c.tags || [], desc: c.descr, avatar: c.avatar, sort: c.sort, hidden: !!c.hidden
+  tags: c.tags || [], desc: c.descr, avatar: c.avatar, sort: c.sort, hidden: !!c.hidden,
+  profile: { links: [], ...(c.profile || {}) }
 });
 
 const api = {
@@ -908,6 +942,7 @@ const api = {
     return { roomId };
   },
 
+  deleteRoom(roomId) { return q(sb.rpc('delete_room', { p_room: roomId })); },
   updateGuestProfile(roomId, guest) { return q(sb.rpc('update_guest_profile', { p_room: roomId, p_guest: guest })); },
   updateStatus(roomId, text) { return q(sb.rpc('update_status', { p_room: roomId, p_text: text })); },
   createThread(roomId, au, text) { return q(sb.rpc('create_thread', { p_room: roomId, p_au: au, p_text: text })); },
@@ -965,14 +1000,16 @@ const state = {
   pfAvatar: '',
   charFormId: null,
   cfAvatar: '',
+  viewCharId: null,
   unsubscribeRoom: null,
   unsubscribeAll: null,
   busy: false,
   forceScroll: false
 };
 
+const EMPTY_CHAR = { name: '', sub: '', tags: [], avatar: '', status: '', desc: '', profile: { links: [] } };
 const charById = id => state.characters.find(c => c.id === id);
-const hostChar = () => charById(state.room.hostCharId) || { name: '', sub: '', tags: [], avatar: '', status: '', desc: '' };
+const hostChar = () => charById(state.room.hostCharId) || EMPTY_CHAR;
 const roleName = role => role === 'host' ? hostChar().name : state.room.guest.name;
 const allAus = () => [...DEFAULT_AUS, ...(state.room?.customAus || [])];
 
@@ -986,6 +1023,37 @@ function avatarOf(role, size) {
   if (role === 'host') { const c = hostChar(); return avatar(c.avatar, c.name, size); }
   const g = state.room.guest;
   return avatar(g.avatar, g.name, size);
+}
+
+function linksHtml(links) {
+  return links.map(l =>
+    `<a href="${esc(l)}" target="_blank" rel="noopener noreferrer">${esc(l.replace(/^https?:\/\//, ''))}</a>`).join('');
+}
+
+/* 호스트 캐릭터 프로필 항목 (쇼케이스 · 방 안 프로필 공용) */
+const CHAR_VIEW_FIELDS = [
+  ['age', '나이'], ['gender', '성별'], ['affiliation', '소속 · 직업'], ['world', '세계관 · 장르'],
+  ['personality', '성격'], ['appearance', '외형'], ['relation', '원하는 관계성'], ['ng', '지뢰 · NG']
+];
+function charRowsHtml(c) {
+  const rows = [];
+  if (c.status) rows.push(['상태', c.status]);
+  if (c.tags?.length) rows.push(['태그', c.tags.join('  ')]);
+  if (c.desc) rows.push(['소개', c.desc]);
+  CHAR_VIEW_FIELDS.forEach(([key, label]) => { if (c.profile?.[key]) rows.push([label, c.profile[key]]); });
+  let html = rows.map(([k, v]) => `<dt>${esc(k)}</dt><dd>${esc(v)}</dd>`).join('');
+  if (c.profile?.links?.length) html += `<dt>링크</dt><dd>${linksHtml(c.profile.links)}</dd>`;
+  return html;
+}
+function charHeadHtml(c, roleLabel) {
+  return `
+    <div class="pv-head">
+      ${avatar(c.avatar, c.name, 'lg')}
+      <div>
+        <div class="pv-role">${esc(roleLabel)}</div>
+        <div class="pv-name">${esc(c.name)}${c.sub ? `<span class="card-sub">${esc(c.sub)}</span>` : ''}</div>
+      </div>
+    </div>`;
 }
 
 const run = fn => async (...args) => {
@@ -1025,7 +1093,18 @@ async function refresh() {
 let roomTimer = null;
 function scheduleRoomRefresh() {
   clearTimeout(roomTimer);
-  roomTimer = setTimeout(() => { loadRoom().catch(e => console.warn(e)); }, 200);
+  roomTimer = setTimeout(async () => {
+    try {
+      await loadRoom();
+    } catch (e) {
+      if (state.activeRoomId && !state.isHost) {
+        alert('이 교류방이 삭제되었거나 더 이상 들어갈 수 없습니다.');
+        goLobby().catch(() => {});
+      } else {
+        console.warn(e);
+      }
+    }
+  }, 200);
 }
 let roomsTimer = null;
 function scheduleRoomsRefresh() {
@@ -1054,6 +1133,7 @@ function applyRoleUI() {
   $('currentRoleText').textContent = state.isHost ? '호스트' : '방문자';
   $('btnAuth').textContent = state.isHost ? '로그아웃' : '호스트 로그인';
   $('btnBackLobby').hidden = state.isHost;
+  $('btnDeleteRoom').hidden = !state.isHost;
   $('tokenBar').hidden = state.isHost;
   $('lobbyTitle').textContent = state.isHost ? '캐릭터 관리' : '누구와 이야기를 나누시겠습니까?';
   $('lobbyDesc').textContent = state.isHost
@@ -1177,10 +1257,14 @@ function renderShowcase() {
              <button type="button" class="btn btn-ghost btn-small" data-act="hide">${c.hidden ? '보이기' : '숨기기'}</button>
              <button type="button" class="btn btn-ghost btn-small" data-act="delete">삭제</button>
            </div>`
-        : '<button type="button" class="btn btn-block" data-act="create">교류방 만들기</button>'}
+        : `<div class="card-actions">
+             <button type="button" class="btn btn-ghost btn-small" data-act="view">프로필</button>
+             <button type="button" class="btn btn-small" data-act="create">교류방 만들기</button>
+           </div>`}
     `;
     card.querySelectorAll('[data-act]').forEach(btn => {
       const act = btn.dataset.act;
+      if (act === 'view') btn.addEventListener('click', () => openCharView(c));
       if (act === 'create') btn.addEventListener('click', () => openProfileForm('create', c.id));
       if (act === 'edit') btn.addEventListener('click', () => openCharForm(c));
       if (act === 'hide') btn.addEventListener('click', run(() => toggleCharHidden(c)));
@@ -1199,7 +1283,24 @@ function renderShowcase() {
   }
 }
 
+function openCharView(c) {
+  state.viewCharId = c.id;
+  const rows = charRowsHtml(c);
+  $('cvBody').innerHTML = `
+    ${charHeadHtml(c, '호스트 캐릭터')}
+    ${rows ? `<dl class="profile-dl">${rows}</dl>` : '<p class="pv-empty">등록된 정보가 없습니다.</p>'}
+  `;
+  $('btnCvCreate').hidden = state.isHost;
+  closeModals();
+  $('modalCharView').classList.add('open');
+}
+
 /* ---------- 호스트 캐릭터 관리 ---------- */
+const CF_PROFILE_INPUTS = {
+  age: 'cfAge', gender: 'cfGender', affiliation: 'cfAffiliation', world: 'cfWorld',
+  personality: 'cfPersonality', appearance: 'cfAppearance', relation: 'cfRelation', ng: 'cfNg'
+};
+
 async function toggleCharHidden(c) {
   await api.setCharacterHidden(c.id, !c.hidden);
   await reloadCharacters();
@@ -1228,6 +1329,9 @@ function openCharForm(c) {
   $('cfOpen').checked = c ? c.open : true;
   $('cfTags').value = (c?.tags || []).join(' ');
   $('cfDesc').value = c?.desc || '';
+  Object.entries(CF_PROFILE_INPUTS).forEach(([key, id]) => { $(id).value = c?.profile?.[key] || ''; });
+  $('cfLinks').innerHTML = '';
+  (c?.profile?.links?.length ? c.profile.links : ['']).forEach(v => addLinkRow('cfLinks', 'btnCfAddLink', v));
   $('cfError').textContent = '';
   renderCfAvatar();
   closeModals();
@@ -1241,6 +1345,11 @@ async function submitChar() {
   const sortRaw = $('cfSort').value.trim();
   if (!name) { $('cfError').textContent = '이름을 입력해 주세요.'; return; }
   if (sortRaw && !/^\d{1,3}$/.test(sortRaw)) { $('cfError').textContent = '표시 순서는 0~999 사이 숫자로 입력해 주세요.'; return; }
+  const links = collectLinks('cfLinks');
+  if (!links) { $('cfError').textContent = '링크 형식을 확인해 주세요.'; return; }
+
+  const profile = { links };
+  Object.entries(CF_PROFILE_INPUTS).forEach(([key, id]) => { profile[key] = $(id).value.trim(); });
 
   await api.upsertCharacter(state.charFormId, {
     name,
@@ -1251,7 +1360,8 @@ async function submitChar() {
     tags: parseTags($('cfTags').value),
     descr: $('cfDesc').value.trim(),
     avatar: state.cfAvatar,
-    sort: sortRaw
+    sort: sortRaw,
+    profile
   });
   closeModals();
   await reloadCharacters();
@@ -1272,6 +1382,19 @@ function renderRoom() {
   renderSseols();
   renderRp();
   if ($('modalProfileView').classList.contains('open')) renderProfileView();
+}
+
+async function deleteRoom() {
+  const code = state.room.roomId;
+  const input = prompt(`이 교류방의 썰, 답글, 역극 기록이 모두 삭제되며 되돌릴 수 없습니다.\n삭제하려면 방 코드 ${code} 를 입력하세요.`);
+  if (input === null) return;
+  if (input.trim().toUpperCase() !== code) {
+    alert('방 코드가 일치하지 않아 삭제하지 않았습니다.');
+    return;
+  }
+  if (state.unsubscribeRoom) { state.unsubscribeRoom(); state.unsubscribeRoom = null; }
+  await api.deleteRoom(code);
+  await goLobby();
 }
 
 function renderAuSelect() {
@@ -1504,6 +1627,31 @@ function openNovelModal() {
   $('modalNovelView').classList.add('open');
 }
 
+/* ---------- 링크 입력 (공용) ---------- */
+function addLinkRow(boxId, btnId, value = '') {
+  const box = $(boxId);
+  if (box.children.length >= MAX_LINKS) return;
+  const row = document.createElement('div');
+  row.className = 'link-row';
+  row.innerHTML = `
+    <input type="url" class="field" placeholder="https://" />
+    <button type="button" class="btn btn-ghost btn-small">삭제</button>
+  `;
+  row.querySelector('input').value = value;
+  row.querySelector('button').addEventListener('click', () => {
+    row.remove();
+    if (!box.children.length) addLinkRow(boxId, btnId);
+    $(btnId).disabled = box.children.length >= MAX_LINKS;
+  });
+  box.appendChild(row);
+  $(btnId).disabled = box.children.length >= MAX_LINKS;
+}
+
+function collectLinks(boxId) {
+  const links = [...$(boxId).querySelectorAll('input')].map(i => i.value.trim()).filter(Boolean).map(normalizeUrl);
+  return links.some(l => !l) ? null : links;
+}
+
 /* ---------- 방문자 프로필 작성 / 수정 ---------- */
 const PF_INPUTS = {
   name: 'pfName', nameAlt: 'pfNameAlt', age: 'pfAge', gender: 'pfGender', affiliation: 'pfAffiliation',
@@ -1516,25 +1664,6 @@ function renderPfAvatar() {
   $('btnRemoveAvatar').hidden = !state.pfAvatar;
 }
 
-function addLinkRow(value = '') {
-  const box = $('pfLinks');
-  if (box.children.length >= MAX_LINKS) return;
-  const row = document.createElement('div');
-  row.className = 'link-row';
-  row.innerHTML = `
-    <input type="url" class="field" placeholder="https://" />
-    <button type="button" class="btn btn-ghost btn-small">삭제</button>
-  `;
-  row.querySelector('input').value = value;
-  row.querySelector('button').addEventListener('click', () => {
-    row.remove();
-    if (!box.children.length) addLinkRow();
-    $('btnAddLink').disabled = box.children.length >= MAX_LINKS;
-  });
-  box.appendChild(row);
-  $('btnAddLink').disabled = box.children.length >= MAX_LINKS;
-}
-
 function openProfileForm(mode, charId) {
   state.profileMode = mode;
   state.pendingCharId = charId || null;
@@ -1544,7 +1673,7 @@ function openProfileForm(mode, charId) {
   renderPfAvatar();
   $('pfPassword').value = '';
   $('pfLinks').innerHTML = '';
-  (g.links && g.links.length ? g.links : ['']).forEach(addLinkRow);
+  (g.links && g.links.length ? g.links : ['']).forEach(v => addLinkRow('pfLinks', 'btnAddLink', v));
   $('pfError').textContent = '';
   $('pfAccessSection').hidden = mode === 'edit';
   $('pfTitle').textContent = mode === 'edit' ? '방문자 프로필 수정' : `${charById(charId)?.name || ''} — 새 교류방`;
@@ -1557,9 +1686,9 @@ function openProfileForm(mode, charId) {
 function collectProfile() {
   const profile = {};
   Object.entries(PF_INPUTS).forEach(([key, id]) => { profile[key] = $(id).value.trim(); });
-  const links = [...$('pfLinks').querySelectorAll('input')].map(i => i.value.trim()).filter(Boolean).map(normalizeUrl);
   if (!profile.name) return { error: '이름을 입력해 주세요.' };
-  if (links.some(l => !l)) return { error: '링크 형식을 확인해 주세요.' };
+  const links = collectLinks('pfLinks');
+  if (!links) return { error: '링크 형식을 확인해 주세요.' };
   profile.links = links;
   profile.avatar = state.pfAvatar;
   return { profile };
@@ -1588,7 +1717,7 @@ async function uploadAvatarFile(file) {
   return api.uploadImage(blob);
 }
 
-/* ---------- 프로필 보기 ---------- */
+/* ---------- 방 안 프로필 보기 ---------- */
 const GUEST_VIEW_FIELDS = [
   ['nameAlt', '다른 표기'], ['age', '나이'], ['gender', '성별'], ['affiliation', '소속 · 직업'],
   ['world', '세계관 · 장르'], ['personality', '성격'], ['intro', '소개'], ['appearance', '외형'],
@@ -1598,30 +1727,19 @@ const GUEST_VIEW_FIELDS = [
 function renderProfileView() {
   const c = hostChar();
   const g = state.room.guest;
-
-  const hostRows = [['상태', c.status], ['태그', (c.tags || []).join('  ')], ['소개', c.desc]]
-    .filter(([, v]) => v).map(([k, v]) => `<dt>${esc(k)}</dt><dd>${esc(v)}</dd>`);
+  const hostRows = charRowsHtml(c);
 
   $('pvHost').innerHTML = `
-    <div class="pv-head">
-      ${avatar(c.avatar, c.name, 'lg')}
-      <div>
-        <div class="pv-role">호스트 캐릭터${state.isHost ? ' · 나' : ''}</div>
-        <div class="pv-name">${esc(c.name)}${c.sub ? `<span class="card-sub">${esc(c.sub)}</span>` : ''}</div>
-      </div>
-    </div>
-    <dl class="profile-dl">${hostRows.join('')}</dl>
+    ${charHeadHtml(c, `호스트 캐릭터${state.isHost ? ' · 나' : ''}`)}
+    ${hostRows ? `<dl class="profile-dl">${hostRows}</dl>` : '<p class="pv-empty">등록된 정보가 없습니다.</p>'}
     ${state.isHost ? `<div class="pv-actions">
+      <button type="button" class="btn btn-ghost btn-small" id="btnHostEdit">프로필 수정</button>
       <button type="button" class="btn btn-ghost btn-small" id="btnHostAvatar">인장 변경</button>
-      ${c.avatar ? '<button type="button" class="btn btn-ghost btn-small" id="btnHostAvatarRemove">인장 삭제</button>' : ''}
     </div>` : ''}
   `;
 
   const guestRows = GUEST_VIEW_FIELDS.filter(([key]) => g[key]).map(([key, label]) => `<dt>${esc(label)}</dt><dd>${esc(g[key])}</dd>`);
-  if (g.links && g.links.length) {
-    guestRows.push(`<dt>링크</dt><dd>${g.links.map(l =>
-      `<a href="${esc(l)}" target="_blank" rel="noopener noreferrer">${esc(l.replace(/^https?:\/\//, ''))}</a>`).join('')}</dd>`);
-  }
+  if (g.links && g.links.length) guestRows.push(`<dt>링크</dt><dd>${linksHtml(g.links)}</dd>`);
 
   $('pvGuest').innerHTML = `
     <div class="pv-head">
@@ -1638,12 +1756,8 @@ function renderProfileView() {
   `;
 
   if (state.isHost) {
+    $('btnHostEdit').addEventListener('click', () => { const ch = charById(state.room.hostCharId); if (ch) openCharForm(ch); });
     $('btnHostAvatar').addEventListener('click', () => $('hostAvatarFile').click());
-    const rm = $('btnHostAvatarRemove');
-    if (rm) rm.addEventListener('click', run(async () => {
-      await api.updateCharacterAvatar(state.room.hostCharId, '');
-      await reloadCharacters();
-    }));
   } else {
     $('btnEditProfile').addEventListener('click', () => openProfileForm('edit'));
   }
@@ -1717,10 +1831,12 @@ onEnter($('loginPassword'), run(hostLogin));
 
 $('btnManageChars').addEventListener('click', run(goLobby));
 $('btnBackLobby').addEventListener('click', run(goLobby));
+$('btnDeleteRoom').addEventListener('click', run(deleteRoom));
 $('tabBtnSseol').addEventListener('click', () => switchTab('sseol'));
 $('tabBtnRp').addEventListener('click', () => switchTab('rp'));
 $('btnOpenShare').addEventListener('click', openShareModal);
 $('btnOpenProfile').addEventListener('click', openProfileView);
+$('btnCvCreate').addEventListener('click', () => { if (state.viewCharId) openProfileForm('create', state.viewCharId); });
 
 $('newSseolAu').addEventListener('change', e => {
   const custom = e.target.value === '__custom__';
@@ -1757,7 +1873,7 @@ onEnter($('rpInputText'), send);
 $('btnOpenNovel').addEventListener('click', openNovelModal);
 $('btnCopyNovel').addEventListener('click', e => copyText($('novelTextOutput').textContent, e.currentTarget));
 
-// 방문자 프로필 인장
+// 방문자 프로필
 $('btnPickAvatar').addEventListener('click', () => $('pfAvatarFile').click());
 $('btnRemoveAvatar').addEventListener('click', () => { state.pfAvatar = ''; renderPfAvatar(); });
 $('pfAvatarFile').addEventListener('change', run(async e => {
@@ -1768,8 +1884,10 @@ $('pfAvatarFile').addEventListener('change', run(async e => {
   renderPfAvatar();
 }));
 $('pfName').addEventListener('input', () => { if (!state.pfAvatar) renderPfAvatar(); });
+$('btnAddLink').addEventListener('click', () => addLinkRow('pfLinks', 'btnAddLink'));
+$('btnSubmitProfile').addEventListener('click', run(submitProfile));
 
-// 호스트 캐릭터 폼 인장
+// 호스트 캐릭터 폼
 $('btnCfPickAvatar').addEventListener('click', () => $('cfAvatarFile').click());
 $('btnCfRemoveAvatar').addEventListener('click', () => { state.cfAvatar = ''; renderCfAvatar(); });
 $('cfAvatarFile').addEventListener('change', run(async e => {
@@ -1780,9 +1898,10 @@ $('cfAvatarFile').addEventListener('change', run(async e => {
   renderCfAvatar();
 }));
 $('cfName').addEventListener('input', () => { if (!state.cfAvatar) renderCfAvatar(); });
+$('btnCfAddLink').addEventListener('click', () => addLinkRow('cfLinks', 'btnCfAddLink'));
 $('btnSubmitChar').addEventListener('click', run(submitChar));
 
-// 방 안 프로필에서 호스트 인장 변경
+// 방 안 프로필에서 호스트 인장 바로 변경
 $('hostAvatarFile').addEventListener('change', run(async e => {
   const file = e.target.files[0];
   e.target.value = '';
@@ -1791,9 +1910,6 @@ $('hostAvatarFile').addEventListener('change', run(async e => {
   await api.updateCharacterAvatar(state.room.hostCharId, url);
   await reloadCharacters();
 }));
-
-$('btnAddLink').addEventListener('click', () => addLinkRow());
-$('btnSubmitProfile').addEventListener('click', run(submitProfile));
 
 const join = run(enterByToken);
 $('btnEnterByToken').addEventListener('click', join);
